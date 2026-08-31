@@ -1,6 +1,7 @@
 from flask import Flask
 from app.config import Config
-from app.extensions import db, jwt, cors
+from app.extensions import db, jwt, cors, migrate
+from app.models import User
 
 def create_app():
     app = Flask(__name__)
@@ -9,6 +10,7 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     cors.init_app(app)
+    migrate.init_app(app, db)
 
     # Blueprints will be registered here as we build them
     # from app.routes.auth import auth_bp
