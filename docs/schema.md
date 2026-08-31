@@ -23,3 +23,25 @@ More tables (units, maintenance_requests, assignments, payments, status_history,
 | is_archived | Boolean | Soft-delete flag. Units are never hard-deleted (preserves historical maintenance/payment records). Default false. |
 | created_at | DateTime (UTC) | Auto-set on creation |
 | updated_at | DateTime (UTC) | Auto-updates on every change |
+
+## maintenance_requests
+| Column | Type | Notes |
+|---|---|---|
+| id | String(36) UUID | Primary key |
+| unit_id | String(36) FK -> units.id | Which unit this request belongs to |
+| description | Text | Required |
+| priority | String(20) | Low / Medium / High / Urgent |
+| status | String(20) | Reported / Triaged / Scheduled / Resolved. Default 'Reported' |
+| created_by | String(36) FK -> users.id | Who reported it |
+| created_at / updated_at | DateTime (UTC) | Auto-managed |
+
+## assignments
+| Column | Type | Notes |
+|---|---|---|
+| id | String(36) UUID | Primary key |
+| request_id | String(36) FK -> maintenance_requests.id | |
+| contractor_id | String(36) FK -> users.id | |
+| assigned_at | DateTime (UTC) | |
+| Unique constraint | (request_id, contractor_id) | Prevents duplicate assignment of same contractor to same request |
+
+Many-to-many relationship: one request can have multiple contractors, one contractor can be on multiple requests.

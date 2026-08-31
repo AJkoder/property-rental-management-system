@@ -17,3 +17,13 @@
 - Added Unit model (units table) with soft-delete pattern
 - Built full Units CRUD: create, list, get, update, archive, restore
 - Tested all endpoints manually via curl, confirmed permission checks work correctly
+
+## Session 3 — Maintenance Requests, Status Lifecycle, Assignments
+- Built MaintenanceRequest model with foreign key to Unit
+- Built Assignment model (many-to-many between requests and contractors)
+- Designed and implemented status state machine (Reported -> Triaged -> Scheduled -> Resolved)
+- Enforced "Scheduled requires contractor assigned" business rule
+- Enforced "Resolved reopens to Triaged, not Reported" rule
+- Built contractor assignment/removal endpoints (manager-only)
+- Built role-based request filtering (contractors see only their assigned requests)
+- Tested entire lifecycle end-to-end via curl: invalid transitions correctly blocked, valid path (Reported -> Triaged -> Scheduled -> Resolved -> Triaged) works correctly
