@@ -1,6 +1,6 @@
 from flask import Flask
 from app.config import Config
-from app.extensions import db, jwt, cors, migrate
+from app.extensions import db, jwt, cors, migrate, bcrypt
 from app.models import User
 
 def create_app():
@@ -11,10 +11,10 @@ def create_app():
     jwt.init_app(app)
     cors.init_app(app)
     migrate.init_app(app, db)
+    bcrypt.init_app(app)
 
-    # Blueprints will be registered here as we build them
-    # from app.routes.auth import auth_bp
-    # app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    from app.routes.auth import auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
     @app.route('/api/health')
     def health():
