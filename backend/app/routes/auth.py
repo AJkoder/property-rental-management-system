@@ -78,3 +78,15 @@ def login():
         'user': user.to_dict(),
         'access_token': access_token
     }), 200
+
+
+@auth_bp.route('/me', methods=['GET'])
+def me():
+    from flask_jwt_extended import jwt_required
+    from app.utils.auth_helpers import get_current_user_id, get_current_user_role
+
+    @jwt_required()
+    def _inner():
+        return jsonify({'user_id': get_current_user_id(), 'role': get_current_user_role()}), 200
+
+    return _inner()
