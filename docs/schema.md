@@ -11,3 +11,15 @@
 | created_at | DateTime (UTC) | Set automatically on creation |
 
 More tables (units, maintenance_requests, assignments, payments, status_history, alerts) will be added here as they're built in upcoming sessions.
+
+## units
+| Column | Type | Notes |
+|---|---|---|
+| id | String(36) UUID | Primary key |
+| unit_number | String(50) | Required |
+| address | String(255) | Required |
+| rent_amount | Numeric(10,2) | Required. Uses Numeric not Float to avoid floating-point rounding errors with currency. |
+| tenant_name | String(120) | Nullable — unit may be vacant |
+| is_archived | Boolean | Soft-delete flag. Units are never hard-deleted (preserves historical maintenance/payment records). Default false. |
+| created_at | DateTime (UTC) | Auto-set on creation |
+| updated_at | DateTime (UTC) | Auto-updates on every change |
