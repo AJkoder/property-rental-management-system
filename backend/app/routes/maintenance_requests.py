@@ -4,10 +4,12 @@ from app.models import MaintenanceRequest, Unit, Assignment, StatusHistory
 from app.utils.auth_helpers import role_required, get_current_user_id, get_current_user_role
 from app.utils.status_rules import is_transition_allowed, check_scheduling_requirements, VALID_STATUSES
 from flask_jwt_extended import jwt_required
+from sqlalchemy import or_
 
 requests_bp = Blueprint('requests', __name__)
 
 VALID_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent']
+VALID_SORT_FIELDS = ['created_at', 'updated_at', 'priority', 'status']
 
 
 @requests_bp.route('', methods=['POST'])
@@ -41,7 +43,7 @@ def create_request():
         created_by=user_id
     )
     db.session.add(req)
-    db.session.flush()  # get req.id before commit
+    db.session.flush()
 
     history = StatusHistory(
         request_id=req.id,
@@ -68,10 +70,53 @@ def list_requests():
 
     status_filter = request.args.get('status')
     if status_filter:
+        if status_filter not in VALID_STATUSES:
+            return jsonify({'error': f'status must be one of {VALID_STATUSES}'}), 400
         query = query.filter(MaintenanceRequest.status == status_filter)
 
-    requests_list = query.order_by(MaintenanceRequest.created_at.desc()).all()
-    return jsonify({'requests': [r.to_dict() for r in requests_list]}), 200
+    priority_filter = request.args.get('priority')
+    if priority_filter:
+        if priority_filter not in VALID_PRIORITIES:
+            return jsonify({'error': f'priority must be one of {VALID_PRIORITIES}'}), 400
+        query = query.filter(MaintenanceRequest.priority == priority_filter)
+
+    unit_id_filter = request.args.get('unit_id')
+    if unit_id_filter:
+        query = query.filter(MaintenanceRequest.unit_id == unit_id_filter)
+
+    search = request.args.get('search')
+    if search:
+        query = query.filter(MaintenanceRequest.description.ilike(f'%{search}%'))
+
+    sort_by = request.args.get('sort_by', 'created_at')
+    if sort_by not in VALID_SORT_FIELDS:
+        return jsonify({'error': f'sort_by must be one of {VALID_SORT_FIELDS}'}), 400
+
+    sort_order = request.args.get('sort_order', 'desc')
+    sort_column = getattr(MaintenanceRequest, sort_by)
+    if sort_order == 'asc':
+        query = query.order_by(sort_column.asc())
+    else:
+        query = query.order_by(sort_column.desc())
+
+    try:
+        page = max(1, int(request.args.get('page', 1)))
+        per_page = min(100, max(1, int(request.args.get('per_page', 10))))
+    except ValueError:
+        return jsonify({'error': 'page and per_page must be integers'}), 400
+
+    total = query.count()
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+
+    return jsonify({
+        'requests': [r.to_dict() for r in items],
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'total_pages': (total + per_page - 1) // per_page
+        }
+    }), 200
 
 
 @requests_bp.route('/<request_id>', methods=['GET'])
