@@ -27,3 +27,9 @@
 - Built contractor assignment/removal endpoints (manager-only)
 - Built role-based request filtering (contractors see only their assigned requests)
 - Tested entire lifecycle end-to-end via curl: invalid transitions correctly blocked, valid path (Reported -> Triaged -> Scheduled -> Resolved -> Triaged) works correctly
+
+## Session 3 (cont.) — Immutable Audit Timeline
+- Added StatusHistory model, insert-only by design
+- Hooked automatic history logging into request creation and status update endpoints (same DB transaction)
+- Added /timeline endpoint to view full history of a request
+- Tested end-to-end: creation and status change both correctly logged with who/when/old/new

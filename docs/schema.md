@@ -45,3 +45,15 @@ More tables (units, maintenance_requests, assignments, payments, status_history,
 | Unique constraint | (request_id, contractor_id) | Prevents duplicate assignment of same contractor to same request |
 
 Many-to-many relationship: one request can have multiple contractors, one contractor can be on multiple requests.
+
+## status_history
+| Column | Type | Notes |
+|---|---|---|
+| id | String(36) UUID | Primary key |
+| request_id | String(36) FK -> maintenance_requests.id | |
+| old_status | String(20) | Nullable — null on the very first entry (creation) |
+| new_status | String(20) | Required |
+| changed_by | String(36) FK -> users.id | Who made the change |
+| changed_at | DateTime (UTC) | |
+
+Insert-only table — no update or delete routes exist for this table anywhere in the API, by design. This is what makes the audit trail immutable: it's not a database-level lock, it's a deliberate absence of any mutating endpoint.

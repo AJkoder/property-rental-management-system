@@ -17,3 +17,9 @@ Implemented ALLOWED_TRANSITIONS as a dictionary lookup (current status -> list o
 
 ## Decision: Contractors see only their assigned requests (query-level filtering)
 Rather than filtering results after fetching everything, the contractor role filter is applied directly in the SQL query (join on Assignment, filter by contractor_id) before the request even leaves the database. Keeps this efficient and ensures contractors can never see other contractors' or unassigned requests, even via direct API calls.
+
+## Decision: Immutability enforced by omission, not database triggers
+Chose to make status_history immutable simply by never writing UPDATE or DELETE routes for it, rather than using database-level triggers or permissions to block writes. Simpler to reason about and sufficient for this application's needs, though a stricter production system might add a DB-level trigger as defense-in-depth.
+
+## Decision: History write happens in the same transaction as the status change
+Both the MaintenanceRequest.status update and the StatusHistory insert happen before a single db.session.commit() call. This guarantees they can never get out of sync — either both succeed or (on any error) neither does.
