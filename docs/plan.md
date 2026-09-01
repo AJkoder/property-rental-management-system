@@ -45,3 +45,8 @@
 - Built CSV export endpoint (streamed in-memory, no temp files)
 - Bug hit + fixed: to_dict() was called before db.session.commit(), so generated IDs and relationships weren't populated yet. Fixed with db.session.flush() before building response.
 - Tested bulk entry with a mix of all four outcomes, tested CSV export end-to-end
+
+## Session 5 — Dashboard
+- Built /api/dashboard/summary endpoint: unit occupancy, open/resolved maintenance counts, requests by status and priority, rent underpayment and missing-payment counts for current month
+- Manager-only access, tested contractor correctly blocked (403)
+- Verified counts against known test data

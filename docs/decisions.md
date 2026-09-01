@@ -35,3 +35,9 @@ expected_amount is copied from the unit's current rent_amount at the moment a pa
 
 ## Decision: Partial failure handling in bulk operations
 A bad row in a bulk payment submission (missing fields, non-existent unit, invalid amount) is classified as "unmatched" with a reason, rather than failing the entire batch. This matters practically — a manager pasting 50 rows shouldn't lose all 50 because of one typo. Used db.session.flush() before building response data (not just relying on the ORM defaults) to make sure generated IDs and relationships are available immediately, since the eventual commit happens once at the end of the loop.
+
+## Decision: Dashboard aggregation done in SQL (GROUP BY / COUNT), not Python loops
+Counts and group-by breakdowns (requests by status, requests by priority) use SQLAlchemy's func.count() with group_by(), letting the database do the aggregation. This stays efficient regardless of how much data exists, versus fetching all rows and counting in Python.
+
+## Decision: Dashboard is manager-only
+Occupancy, financial, and portfolio-wide maintenance data isn't something a contractor needs or should see - they only need their own assigned requests. Enforced with the same role_required('manager') pattern used elsewhere.
