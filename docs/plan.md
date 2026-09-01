@@ -59,3 +59,11 @@
 - Tested core matching logic directly: paid-in-full unit correctly skipped, underpaid unit correctly flagged
 - Tested dismiss/list/include_dismissed flow end-to-end via API
 - This completes all 10 core assignment goals on the backend. Next: React frontend + deployment.
+
+## Session 6 — Frontend Foundation
+- Scaffolded React app with Vite, Tailwind CSS v4 (via @tailwindcss/vite plugin)
+- Set up axios API client with automatic JWT attachment and 401 auto-logout handling
+- Built AuthContext for shared login state across the app
+- Built Login and Signup pages with role selection
+- Set up React Router with a ProtectedRoute wrapper (redirects to /login if not authenticated)
+- Tested full flow end-to-end: signup, login, protected dashboard route, logout, direct URL access while logged out correctly redirects

@@ -47,3 +47,9 @@ Rather than tracking dismissal as a mutable flag that persists indefinitely, eac
 
 ## Decision: Alert generation as a manual manager-triggered endpoint, not a background cron job
 In a real production system, alert generation would run automatically on a schedule (e.g. daily cron job). Since this take-home has no background job infrastructure (and adding one, like Celery, would be disproportionate for the assignment's scope), it's exposed as a manager-triggered POST endpoint instead. Documented here as a known simplification, not an oversight.
+
+## Decision: Tailwind CSS v4 with the Vite plugin, not the older PostCSS config approach
+Tailwind v4 removed the old CLI init/config-file workflow in favor of a Vite plugin (@tailwindcss/vite) and a single @import "tailwindcss" line in CSS. Adopted the current recommended approach rather than pinning to v3 for familiarity.
+
+## Decision: Frontend route protection is a UX convenience, not the real security boundary
+ProtectedRoute in React redirects unauthenticated users away from pages they shouldn't see, but this is purely for user experience. The actual permission enforcement happens server-side via role_required() on the Flask API - a user could bypass frontend routing entirely and the backend would still correctly reject unauthorized requests.
