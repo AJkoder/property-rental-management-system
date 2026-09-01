@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.extensions import db
-from app.models import MaintenanceRequest, Unit, Assignment
+from app.models import MaintenanceRequest, Unit, Assignment, StatusHistory
 from app.utils.auth_helpers import role_required, get_current_user_id, get_current_user_role
 from app.utils.status_rules import is_transition_allowed, check_scheduling_requirements, VALID_STATUSES
 from flask_jwt_extended import jwt_required
@@ -41,6 +41,15 @@ def create_request():
         created_by=user_id
     )
     db.session.add(req)
+    db.session.flush()  # get req.id before commit
+
+    history = StatusHistory(
+        request_id=req.id,
+        old_status=None,
+        new_status='Reported',
+        changed_by=user_id
+    )
+    db.session.add(history)
     db.session.commit()
 
     return jsonify({'message': 'Maintenance request created', 'request': req.to_dict()}), 201
@@ -54,7 +63,6 @@ def list_requests():
 
     query = MaintenanceRequest.query
 
-    # Contractors only see requests they're assigned to
     if role == 'contractor':
         query = query.join(Assignment).filter(Assignment.contractor_id == user_id)
 
@@ -99,9 +107,28 @@ def update_status(request_id):
 
     old_status = req.status
     req.status = new_status
+
+    history = StatusHistory(
+        request_id=req.id,
+        old_status=old_status,
+        new_status=new_status,
+        changed_by=get_current_user_id()
+    )
+    db.session.add(history)
     db.session.commit()
 
     return jsonify({
         'message': f'Status changed from {old_status} to {new_status}',
         'request': req.to_dict()
     }), 200
+
+
+@requests_bp.route('/<request_id>/timeline', methods=['GET'])
+@jwt_required()
+def get_timeline(request_id):
+    req = MaintenanceRequest.query.get(request_id)
+    if not req:
+        return jsonify({'error': 'Request not found'}), 404
+
+    history = StatusHistory.query.filter_by(request_id=request_id).order_by(StatusHistory.changed_at.asc()).all()
+    return jsonify({'timeline': [h.to_dict() for h in history]}), 200

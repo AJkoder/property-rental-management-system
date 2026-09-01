@@ -1,7 +1,7 @@
 from flask import Flask
 from app.config import Config
 from app.extensions import db, jwt, cors, migrate, bcrypt
-from app.models import User, Unit, MaintenanceRequest, Assignment
+from app.models import User, Unit, MaintenanceRequest, Assignment, StatusHistory
 
 def create_app():
     app = Flask(__name__)
