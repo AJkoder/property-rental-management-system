@@ -4,3 +4,4 @@ from app.models.maintenance_request import MaintenanceRequest
 from app.models.assignment import Assignment
 from app.models.status_history import StatusHistory
 from app.models.payment import Payment
+from app.models.alert import Alert
