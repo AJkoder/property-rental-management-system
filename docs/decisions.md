@@ -41,3 +41,9 @@ Counts and group-by breakdowns (requests by status, requests by priority) use SQ
 
 ## Decision: Dashboard is manager-only
 Occupancy, financial, and portfolio-wide maintenance data isn't something a contractor needs or should see - they only need their own assigned requests. Enforced with the same role_required('manager') pattern used elsewhere.
+
+## Decision: One alert row per (unit, month) via unique constraint
+Rather than tracking dismissal as a mutable flag that persists indefinitely, each alert is scoped to a specific month. Dismissing an alert only affects that month's row. The next time /generate runs in a new month, it checks that month's payment status independently and creates a fresh alert if still unpaid - it never looks at whether a previous month's alert was dismissed. This makes the "dismiss now, reappear next month if still unpaid" requirement fall out naturally from the data model rather than needing special-case logic.
+
+## Decision: Alert generation as a manual manager-triggered endpoint, not a background cron job
+In a real production system, alert generation would run automatically on a schedule (e.g. daily cron job). Since this take-home has no background job infrastructure (and adding one, like Celery, would be disproportionate for the assignment's scope), it's exposed as a manager-triggered POST endpoint instead. Documented here as a known simplification, not an oversight.

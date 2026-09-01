@@ -50,3 +50,12 @@
 - Built /api/dashboard/summary endpoint: unit occupancy, open/resolved maintenance counts, requests by status and priority, rent underpayment and missing-payment counts for current month
 - Manager-only access, tested contractor correctly blocked (403)
 - Verified counts against known test data
+
+## Session 5 (cont.) — Rent Alerts
+- Added Alert model with unique (unit_id, month_covered) constraint
+- Built /generate endpoint: respects grace period, creates no_payment or underpaid alerts, skips units already fully paid, doesn't duplicate existing alerts
+- Built list (with include_dismissed filter) and dismiss endpoints
+- Tested grace period blocking (day 1 of month correctly produces zero alerts)
+- Tested core matching logic directly: paid-in-full unit correctly skipped, underpaid unit correctly flagged
+- Tested dismiss/list/include_dismissed flow end-to-end via API
+- This completes all 10 core assignment goals on the backend. Next: React frontend + deployment.

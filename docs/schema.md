@@ -69,3 +69,16 @@ Insert-only table — no update or delete routes exist for this table anywhere i
 | match_status | String(20) | matched / underpaid / overpaid, computed at creation time |
 | recorded_by | String(36) FK -> users.id | |
 | recorded_at | DateTime (UTC) | |
+
+## alerts
+| Column | Type | Notes |
+|---|---|---|
+| id | String(36) UUID | Primary key |
+| unit_id | String(36) FK -> units.id | |
+| month_covered | String(7) | Format 'YYYY-MM' |
+| reason | String(50) | 'no_payment' or 'underpaid' |
+| is_dismissed | Boolean | Default false |
+| dismissed_at | DateTime (UTC) | Nullable |
+| dismissed_by | String(36) FK -> users.id | Nullable |
+| created_at | DateTime (UTC) | |
+| Unique constraint | (unit_id, month_covered) | One alert per unit per month - this is what makes "dismiss this month, reappears next month" work naturally |
