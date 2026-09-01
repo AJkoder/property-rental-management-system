@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import Layout from './components/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
@@ -18,23 +19,15 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <Layout>{children}</Layout>;
 }
 
 function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <div className="text-center">
-        <p className="text-lg text-slate-900">Welcome, {user.name}</p>
-        <p className="text-sm text-slate-500">Role: {user.role}</p>
-        <button
-          onClick={logout}
-          className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-        >
-          Log out
-        </button>
-      </div>
+    <div>
+      <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
+      <p className="mt-1 text-sm text-slate-500">Welcome back, {user.name}</p>
     </div>
   );
 }
