@@ -33,3 +33,8 @@
 - Hooked automatic history logging into request creation and status update endpoints (same DB transaction)
 - Added /timeline endpoint to view full history of a request
 - Tested end-to-end: creation and status change both correctly logged with who/when/old/new
+
+## Session 4 — Search, Filter, Sort, Pagination
+- Extended requests list endpoint with: status/priority/unit_id filters, text search on description, whitelisted sort fields with asc/desc, page/per_page pagination (capped at 100/page)
+- Response includes pagination metadata (page, per_page, total, total_pages)
+- Tested all filter combinations, confirmed invalid sort_by is rejected cleanly (400, not a crash)

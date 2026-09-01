@@ -23,3 +23,9 @@ Chose to make status_history immutable simply by never writing UPDATE or DELETE 
 
 ## Decision: History write happens in the same transaction as the status change
 Both the MaintenanceRequest.status update and the StatusHistory insert happen before a single db.session.commit() call. This guarantees they can never get out of sync — either both succeed or (on any error) neither does.
+
+## Decision: Whitelisted sort fields, not raw column names from query params
+sort_by only accepts a fixed list of column names (created_at, updated_at, priority, status) rather than passing the user's input directly into getattr() unchecked. Prevents sorting by unintended/sensitive columns and avoids any risk of arbitrary attribute access from user input.
+
+## Decision: Filtering, sorting, and pagination all happen at the SQL query level
+All list-endpoint filtering (status, priority, unit_id, search) and pagination (offset/limit) are applied as SQLAlchemy query modifiers before the query executes, not by fetching all rows and slicing in Python. This keeps memory usage and response size bounded regardless of how much data exists, and is what "server-side" pagination/filtering actually means as opposed to just hiding rows in the frontend.
