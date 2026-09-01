@@ -57,3 +57,15 @@ Many-to-many relationship: one request can have multiple contractors, one contra
 | changed_at | DateTime (UTC) | |
 
 Insert-only table — no update or delete routes exist for this table anywhere in the API, by design. This is what makes the audit trail immutable: it's not a database-level lock, it's a deliberate absence of any mutating endpoint.
+
+## payments
+| Column | Type | Notes |
+|---|---|---|
+| id | String(36) UUID | Primary key |
+| unit_id | String(36) FK -> units.id | |
+| amount_paid | Numeric(10,2) | What was actually paid |
+| expected_amount | Numeric(10,2) | Snapshot of the unit's rent_amount at time of recording (not a live reference — protects historical accuracy if rent changes later) |
+| month_covered | String(7) | Format 'YYYY-MM' |
+| match_status | String(20) | matched / underpaid / overpaid, computed at creation time |
+| recorded_by | String(36) FK -> users.id | |
+| recorded_at | DateTime (UTC) | |

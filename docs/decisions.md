@@ -29,3 +29,9 @@ sort_by only accepts a fixed list of column names (created_at, updated_at, prior
 
 ## Decision: Filtering, sorting, and pagination all happen at the SQL query level
 All list-endpoint filtering (status, priority, unit_id, search) and pagination (offset/limit) are applied as SQLAlchemy query modifiers before the query executes, not by fetching all rows and slicing in Python. This keeps memory usage and response size bounded regardless of how much data exists, and is what "server-side" pagination/filtering actually means as opposed to just hiding rows in the frontend.
+
+## Decision: Snapshot expected_amount on the payment record, not a live reference
+expected_amount is copied from the unit's current rent_amount at the moment a payment is recorded, rather than being calculated on-the-fly by joining to the unit each time. If rent changes later, old payment records still accurately reflect what was expected when they were recorded, instead of silently changing to match the new rent.
+
+## Decision: Partial failure handling in bulk operations
+A bad row in a bulk payment submission (missing fields, non-existent unit, invalid amount) is classified as "unmatched" with a reason, rather than failing the entire batch. This matters practically — a manager pasting 50 rows shouldn't lose all 50 because of one typo. Used db.session.flush() before building response data (not just relying on the ORM defaults) to make sure generated IDs and relationships are available immediately, since the eventual commit happens once at the end of the loop.

@@ -38,3 +38,10 @@
 - Extended requests list endpoint with: status/priority/unit_id filters, text search on description, whitelisted sort fields with asc/desc, page/per_page pagination (capped at 100/page)
 - Response includes pagination metadata (page, per_page, total, total_pages)
 - Tested all filter combinations, confirmed invalid sort_by is rejected cleanly (400, not a crash)
+
+## Session 4 (cont.) — Bulk Rent Recording + CSV Export
+- Added Payment model with amount_paid, expected_amount (snapshotted), month_covered, match_status
+- Built bulk recording endpoint: classifies each entry as matched/underpaid/overpaid/unmatched, partial failures don't block the rest of the batch
+- Built CSV export endpoint (streamed in-memory, no temp files)
+- Bug hit + fixed: to_dict() was called before db.session.commit(), so generated IDs and relationships weren't populated yet. Fixed with db.session.flush() before building response.
+- Tested bulk entry with a mix of all four outcomes, tested CSV export end-to-end
