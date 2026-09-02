@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import Units from './pages/Units';
 import Requests from './pages/Requests';
 import Payments from './pages/Payments';
+import Dashboard from './pages/Dashboard';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -25,15 +26,6 @@ function ProtectedRoute({ children }) {
   return <Layout>{children}</Layout>;
 }
 
-function Dashboard() {
-  const { user } = useAuth();
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-      <p className="mt-1 text-sm text-slate-500">Welcome back, {user.name}</p>
-    </div>
-  );
-}
 
 function App() {
   return (
