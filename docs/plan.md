@@ -79,3 +79,9 @@
 - Built Payments page: dynamic add/remove row bulk entry form, submission result summary (matched/underpaid/overpaid/unmatched counts with icons), payment history table
 - CSV export implemented via authenticated blob download (not a raw link with token in URL) - keeps the JWT in the request header as normal, avoids exposing tokens in URLs
 - Tested bulk entry and export end-to-end in browser
+
+## Session 6 (cont.) — Dashboard and Alerts Pages
+- Built real Dashboard: 4 stat cards (units, open requests, resolved this week, rent issues), donut chart for requests-by-status (recharts), horizontal bar breakdown for open requests by priority
+- Built Alerts page: manual "check for new alerts" trigger, dismiss action, correctly reflects grace period behavior from backend
+- All 6 core frontend pages now complete and functionally tested end-to-end: Login/Signup, Units, Maintenance Requests, Payments, Dashboard, Alerts
+- Remaining work: UI polish pass (loading/empty/error state consistency, spacing/responsive audit), deployment (Render + Vercel), final README/SUBMISSION.md
