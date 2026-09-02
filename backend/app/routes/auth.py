@@ -90,3 +90,16 @@ def me():
         return jsonify({'user_id': get_current_user_id(), 'role': get_current_user_role()}), 200
 
     return _inner()
+
+
+@auth_bp.route('/contractors', methods=['GET'])
+def list_contractors():
+    from app.models import User
+    from flask_jwt_extended import jwt_required
+
+    @jwt_required()
+    def _inner():
+        contractors = User.query.filter_by(role='contractor').all()
+        return jsonify({'contractors': [c.to_dict() for c in contractors]}), 200
+
+    return _inner()
