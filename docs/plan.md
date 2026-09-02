@@ -85,3 +85,15 @@
 - Built Alerts page: manual "check for new alerts" trigger, dismiss action, correctly reflects grace period behavior from backend
 - All 6 core frontend pages now complete and functionally tested end-to-end: Login/Signup, Units, Maintenance Requests, Payments, Dashboard, Alerts
 - Remaining work: UI polish pass (loading/empty/error state consistency, spacing/responsive audit), deployment (Render + Vercel), final README/SUBMISSION.md
+
+## Session 7 — Deployment
+- Backend deployed to Render (Singapore region): added gunicorn + Procfile, set environment variables (DATABASE_URL, SECRET_KEY, JWT_SECRET_KEY, PYTHON_VERSION), root directory set to backend/
+- Fixed: SECRET_KEY and JWT_SECRET_KEY were never actually generated locally (only DATABASE_URL existed, app was silently using insecure fallback defaults from config.py) - generated proper random secrets for both local and Render
+- Frontend deployed to Vercel: root directory set to frontend/, VITE_API_URL environment variable pointing to live Render backend
+- Set up cron-job.org to ping /api/health every 10 minutes, preventing Render free-tier cold starts
+- Replaced default Vite favicon and page title with app-appropriate branding
+- Tested full live app end-to-end: auth, units, requests, payments, dashboard, alerts all working correctly against live Supabase database through deployed backend and frontend
+
+Live URLs:
+- Frontend: https://property-rental-management-system-nine.vercel.app
+- Backend: https://property-rental-backend-ummm.onrender.com

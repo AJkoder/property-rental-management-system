@@ -53,3 +53,9 @@ Tailwind v4 removed the old CLI init/config-file workflow in favor of a Vite plu
 
 ## Decision: Frontend route protection is a UX convenience, not the real security boundary
 ProtectedRoute in React redirects unauthenticated users away from pages they shouldn't see, but this is purely for user experience. The actual permission enforcement happens server-side via role_required() on the Flask API - a user could bypass frontend routing entirely and the backend would still correctly reject unauthorized requests.
+
+## Decision: Render free tier + external cron ping to prevent cold starts
+Render's free tier spins down the backend after ~15 minutes of inactivity, causing a 30-60 second delay on the next request. Set up an external free cron service (cron-job.org) to ping /api/health every 10 minutes, keeping the instance warm. A pragmatic workaround for free-tier hosting rather than paying for an always-on instance, appropriate for this assignment's scope.
+
+## Decision: gunicorn for production instead of Flask's built-in dev server
+Flask's built-in server (python run.py) explicitly warns it isn't suitable for production. Added gunicorn as the WSGI server for the Render deployment, configured via a Procfile (web: gunicorn run:app).
