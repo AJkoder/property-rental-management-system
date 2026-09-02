@@ -74,3 +74,8 @@
 - Built Maintenance Requests page: search + status filter, create modal, click-to-open detail modal with status transition buttons (only valid next states shown, mirroring backend state machine), contractor assignment UI, and timeline view
 - Fixed a file-location mixup where Layout.jsx was accidentally created outside frontend/ - caught via git status before it caused real damage, corrected with git mv equivalent
 - Tested full flow end-to-end: create request, change status through full lifecycle, assign/remove contractor, view timeline
+
+## Session 6 (cont.) — Bulk Rent Page
+- Built Payments page: dynamic add/remove row bulk entry form, submission result summary (matched/underpaid/overpaid/unmatched counts with icons), payment history table
+- CSV export implemented via authenticated blob download (not a raw link with token in URL) - keeps the JWT in the request header as normal, avoids exposing tokens in URLs
+- Tested bulk entry and export end-to-end in browser
