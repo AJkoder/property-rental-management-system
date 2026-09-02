@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Units from './pages/Units';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -44,6 +45,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/units"
+            element={
+              <ProtectedRoute>
+                <Units />
               </ProtectedRoute>
             }
           />
