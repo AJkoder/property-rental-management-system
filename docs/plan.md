@@ -67,3 +67,10 @@
 - Built Login and Signup pages with role selection
 - Set up React Router with a ProtectedRoute wrapper (redirects to /login if not authenticated)
 - Tested full flow end-to-end: signup, login, protected dashboard route, logout, direct URL access while logged out correctly redirects
+
+## Session 6 (cont.) — Units and Maintenance Requests Pages
+- Built Units page: list (table), create/edit modal, archive/restore, role-aware (contractor sees view-only)
+- Added GET /api/auth/contractors backend endpoint to support the assignment dropdown UI
+- Built Maintenance Requests page: search + status filter, create modal, click-to-open detail modal with status transition buttons (only valid next states shown, mirroring backend state machine), contractor assignment UI, and timeline view
+- Fixed a file-location mixup where Layout.jsx was accidentally created outside frontend/ - caught via git status before it caused real damage, corrected with git mv equivalent
+- Tested full flow end-to-end: create request, change status through full lifecycle, assign/remove contractor, view timeline
