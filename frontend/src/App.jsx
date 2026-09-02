@@ -7,6 +7,7 @@ import Units from './pages/Units';
 import Requests from './pages/Requests';
 import Payments from './pages/Payments';
 import Dashboard from './pages/Dashboard';
+import Alerts from './pages/Alerts';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -63,6 +64,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Payments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/alerts"
+            element={
+              <ProtectedRoute>
+                <Alerts />
               </ProtectedRoute>
             }
           />
