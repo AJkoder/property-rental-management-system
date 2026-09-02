@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getDashboardSummary } from '../api/dashboard';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { Building2, Wrench, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
+import { Building2, Wrench, CheckCircle2, IndianRupee } from 'lucide-react';
 
 const STATUS_COLORS = {
   Reported: '#94a3b8',
@@ -39,6 +39,13 @@ export default function Dashboard() {
     value: count,
   }));
 
+  const weeklyChartData = data.maintenance.resolved_per_week_last_8_weeks.map((w) => ({
+    week: w.week_ending.slice(5),
+    resolved: w.count,
+  }));
+
+  const contractorEntries = Object.entries(data.maintenance.by_contractor_open_only);
+
   return (
     <div>
       <div className="mb-6">
@@ -66,14 +73,14 @@ export default function Dashboard() {
           sub="Last 7 days"
         />
         <StatCard
-          icon={<AlertTriangle className="h-5 w-5" />}
-          label="Rent Issues"
-          value={data.rent.underpaid_count + data.rent.units_with_no_payment_recorded}
-          sub={`${data.rent.current_month} · underpaid or unrecorded`}
+          icon={<IndianRupee className="h-5 w-5" />}
+          label="Rent Collected"
+          value={`₹${data.rent.total_collected_this_month.toLocaleString('en-IN')}`}
+          sub={`${data.rent.current_month} · ${data.rent.units_overdue_this_month} unit(s) overdue`}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="mb-4 grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <h2 className="mb-4 text-sm font-semibold text-slate-900">Requests by Status</h2>
           {statusChartData.length === 0 ? (
@@ -126,6 +133,48 @@ export default function Dashboard() {
                   <div key={priority}>
                     <div className="mb-1 flex items-center justify-between text-sm">
                       <span className="text-slate-600">{priority}</span>
+                      <span className="font-medium text-slate-900">{count}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-slate-900"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="mb-4 text-sm font-semibold text-slate-900">Resolved per Week (Last 8 Weeks)</h2>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={weeklyChartData}>
+              <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip />
+              <Bar dataKey="resolved" fill="#0f172a" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
+          <h2 className="mb-4 text-sm font-semibold text-slate-900">Open Requests by Contractor</h2>
+          {contractorEntries.length === 0 ? (
+            <p className="text-sm text-slate-400">No contractors currently assigned.</p>
+          ) : (
+            <div className="space-y-3">
+              {contractorEntries.map(([name, count]) => {
+                const max = Math.max(...contractorEntries.map(([, c]) => c));
+                const pct = (count / max) * 100;
+                return (
+                  <div key={name}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="text-slate-600">{name}</span>
                       <span className="font-medium text-slate-900">{count}</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-slate-100">
