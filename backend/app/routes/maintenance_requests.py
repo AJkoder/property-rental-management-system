@@ -4,7 +4,6 @@ from app.models import MaintenanceRequest, Unit, Assignment, StatusHistory
 from app.utils.auth_helpers import role_required, get_current_user_id, get_current_user_role
 from app.utils.status_rules import is_transition_allowed, check_scheduling_requirements, VALID_STATUSES
 from flask_jwt_extended import jwt_required
-from sqlalchemy import or_
 
 requests_bp = Blueprint('requests', __name__)
 
@@ -84,6 +83,10 @@ def list_requests():
     if unit_id_filter:
         query = query.filter(MaintenanceRequest.unit_id == unit_id_filter)
 
+    contractor_filter = request.args.get('contractor_id')
+    if contractor_filter:
+        query = query.join(Assignment).filter(Assignment.contractor_id == contractor_filter)
+
     search = request.args.get('search')
     if search:
         query = query.filter(MaintenanceRequest.description.ilike(f'%{search}%'))
@@ -126,6 +129,32 @@ def get_request(request_id):
     if not req:
         return jsonify({'error': 'Request not found'}), 404
     return jsonify({'request': req.to_dict()}), 200
+
+
+@requests_bp.route('/<request_id>', methods=['PUT'])
+@jwt_required()
+def update_request(request_id):
+    req = MaintenanceRequest.query.get(request_id)
+    if not req:
+        return jsonify({'error': 'Request not found'}), 404
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data provided'}), 400
+
+    if 'description' in data:
+        description = data['description'].strip()
+        if not description:
+            return jsonify({'error': 'description cannot be empty'}), 400
+        req.description = description
+
+    if 'priority' in data:
+        if data['priority'] not in VALID_PRIORITIES:
+            return jsonify({'error': f'priority must be one of {VALID_PRIORITIES}'}), 400
+        req.priority = data['priority']
+
+    db.session.commit()
+    return jsonify({'message': 'Request updated', 'request': req.to_dict()}), 200
 
 
 @requests_bp.route('/<request_id>/status', methods=['PATCH'])

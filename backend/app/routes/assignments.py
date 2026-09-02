@@ -1,16 +1,9 @@
 from flask import Blueprint, request, jsonify
 from app.extensions import db
-from app.models import Assignment, MaintenanceRequest, User
+from app.models import Assignment, MaintenanceRequest, User, StatusHistory
+from app.utils.auth_helpers import role_required, get_current_user_id
 
 assignments_bp = Blueprint('assignments', __name__)
-
-
-def _role_check():
-    from app.utils.auth_helpers import get_current_user_role
-    return get_current_user_role()
-
-
-from app.utils.auth_helpers import role_required
 
 
 @assignments_bp.route('', methods=['POST'])
@@ -40,6 +33,14 @@ def assign_contractor():
 
     assignment = Assignment(request_id=request_id, contractor_id=contractor_id)
     db.session.add(assignment)
+
+    history = StatusHistory(
+        request_id=request_id,
+        event_type='assignment_added',
+        detail=f'Assigned {contractor.name}',
+        changed_by=get_current_user_id()
+    )
+    db.session.add(history)
     db.session.commit()
 
     return jsonify({'message': 'Contractor assigned', 'assignment': assignment.to_dict()}), 201
@@ -52,8 +53,20 @@ def remove_assignment(assignment_id):
     if not assignment:
         return jsonify({'error': 'Assignment not found'}), 404
 
+    contractor_name = assignment.contractor.name if assignment.contractor else 'contractor'
+    request_id = assignment.request_id
+
     db.session.delete(assignment)
+
+    history = StatusHistory(
+        request_id=request_id,
+        event_type='assignment_removed',
+        detail=f'Removed {contractor_name}',
+        changed_by=get_current_user_id()
+    )
+    db.session.add(history)
     db.session.commit()
+
     return jsonify({'message': 'Assignment removed'}), 200
 
 
