@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Units from './pages/Units';
+import Requests from './pages/Requests';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -53,6 +54,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Units />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/requests"
+            element={
+              <ProtectedRoute>
+                <Requests />
               </ProtectedRoute>
             }
           />
