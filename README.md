@@ -26,20 +26,19 @@ Demo credentials and full project documentation are in [SUBMISSION.md](./SUBMISS
 
 ## Project structure
 
-property-rental-system/
-├── backend/ Flask API
-│ ├── app/
-│ │ ├── models/ SQLAlchemy models, one file per table
-│ │ ├── routes/ Flask blueprints, one file per resource
-│ │ └── utils/ Role-based access control, status lifecycle rules
-│ └── migrations/ Alembic migration history
-├── frontend/ React app (Vite)
-│ └── src/
-│ ├── api/ axios wrappers, one file per backend resource
-│ ├── pages/ One component per route
-│ ├── components/ Shared UI (sidebar/layout)
-│ └── context/ Auth state
-└── docs/ architecture.md, schema.md, plan.md, decisions.md, ai-prompts.md
+## Project structure
+
+- `backend/` — Flask API
+  - `app/models/` — SQLAlchemy models, one file per table
+  - `app/routes/` — Flask blueprints, one file per resource
+  - `app/utils/` — role-based access control, status lifecycle rules
+  - `migrations/` — Alembic migration history
+- `frontend/` — React app (Vite)
+  - `src/api/` — axios wrappers, one file per backend resource
+  - `src/pages/` — one component per route
+  - `src/components/` — shared UI (sidebar/layout)
+  - `src/context/` — auth state
+- `docs/` — architecture.md, schema.md, plan.md, decisions.md, ai-prompts.md
 
 ## Running locally
 
