@@ -3,6 +3,7 @@
 A full-stack property rental and maintenance management system built for a small property management company — replacing spreadsheets and sticky notes with a real system for tracking units, maintenance requests, rent payments, and alerts.
 
 **Live app:** https://property-rental-management-system-nine.vercel.app
+
 **Backend API:** https://property-rental-backend-ummm.onrender.com
 
 Demo credentials and full project documentation are in [SUBMISSION.md](./SUBMISSION.md).
