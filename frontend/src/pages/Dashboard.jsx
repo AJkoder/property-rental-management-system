@@ -111,6 +111,15 @@ export default function Dashboard() {
   const healthGood =
     overdueCount === 0 && urgentCount === 0 && underpaidCount === 0;
 
+  const currentHour = new Date().getHours();
+
+  const greeting =
+    currentHour < 12
+      ? 'Good morning'
+      : currentHour < 17
+        ? 'Good afternoon'
+        : 'Good evening';
+
   return (
     <div className="mx-auto w-full max-w-[1500px] pb-8">
       <section className="mb-6 overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-sm">
@@ -124,7 +133,7 @@ export default function Dashboard() {
             </div>
 
             <h1 className="font-['Fraunces'] text-[30px] font-semibold leading-tight tracking-tight text-[color:var(--ink)]">
-              Good morning
+              {greeting}
             </h1>
 
             <p className="mt-2 max-w-xl text-sm leading-5 text-[color:var(--ink-soft)]">
