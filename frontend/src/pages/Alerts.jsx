@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { generateAlerts, getAlerts, dismissAlert } from '../api/alerts';
-import { AlertTriangle, RefreshCw, X } from 'lucide-react';
+import { AlertTriangle, RefreshCw, X, Bell } from 'lucide-react';
 
 const REASON_LABEL = {
   no_payment: 'No payment recorded',
@@ -56,15 +56,25 @@ export default function Alerts() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Alerts</h1>
-          <p className="mt-1 text-sm text-slate-500">Rent issues that need attention</p>
+      {/* Header */}
+      <div className="mb-7 flex items-end justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--coral)]">
+            <Bell className="h-5 w-5 text-[color:var(--surface)]" />
+          </div>
+          <div>
+            <h1 className="font-['Fraunces'] text-[28px] font-semibold leading-none text-[color:var(--ink)]">
+              Alerts
+            </h1>
+            <p className="mt-1.5 text-sm text-[color:var(--ink-soft)]">
+              Rent issues that need attention
+            </p>
+          </div>
         </div>
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl bg-[color:var(--ink)] px-4 py-2.5 text-sm font-medium text-[color:var(--paper)] transition hover:bg-[color:var(--brand-dark)] disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${generating ? 'animate-spin' : ''}`} />
           {generating ? 'Checking...' : 'Check for new alerts'}
@@ -72,38 +82,55 @@ export default function Alerts() {
       </div>
 
       {message && (
-        <div className="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">{message}</div>
+        <div className="mb-4 rounded-xl bg-[color:var(--brand-tint)] px-4 py-3 text-sm text-[color:var(--brand-dark)]">
+          {message}
+        </div>
       )}
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="mb-4 rounded-xl bg-[color:var(--coral-tint)] px-4 py-3 text-sm text-[color:var(--coral)]">
+          {error}
+        </div>
       )}
 
       {loading ? (
-        <p className="text-sm text-slate-400">Loading alerts...</p>
+        <p className="text-sm text-[color:var(--ink-soft)]">Loading alerts...</p>
       ) : alerts.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white py-12 text-center">
-          <p className="text-sm text-slate-500">No active alerts. Everything looks good.</p>
+        <div className="flex flex-col items-center rounded-3xl border border-dashed border-[color:var(--ink)]/20 bg-[color:var(--surface)] py-16 text-center">
+          <ClearStamp />
+          <p className="mt-4 text-sm text-[color:var(--ink-soft)]">No active alerts. Everything looks good.</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
+              className="relative flex items-center justify-between overflow-hidden rounded-2xl border border-[color:var(--coral)]/25 bg-[color:var(--coral-tint)] py-3.5 pl-8 pr-4"
             >
+              {/* torn-edge perforation strip along the left, like a notice stub */}
+              <div
+                className="absolute inset-y-0 left-0 w-2 bg-[color:var(--coral)]"
+                style={{
+                  maskImage: 'radial-gradient(circle at 4px 6px, transparent 3px, black 3.5px)',
+                  maskSize: '8px 12px',
+                  maskRepeat: 'repeat-y',
+                  WebkitMaskImage: 'radial-gradient(circle at 4px 6px, transparent 3px, black 3.5px)',
+                  WebkitMaskSize: '8px 12px',
+                  WebkitMaskRepeat: 'repeat-y',
+                }}
+              />
               <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+                <AlertTriangle className="h-5 w-5 shrink-0 text-[color:var(--coral)]" />
                 <div>
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-[color:var(--ink)]">
                     {alert.unit_number} — {REASON_LABEL[alert.reason]}
                   </p>
-                  <p className="text-xs text-slate-500">{alert.month_covered}</p>
+                  <p className="text-xs text-[color:var(--ink-soft)]">{alert.month_covered}</p>
                 </div>
               </div>
               <button
                 onClick={() => handleDismiss(alert.id)}
-                className="rounded-md p-1.5 text-slate-400 hover:bg-white hover:text-slate-700"
+                className="rounded-lg p-1.5 text-[color:var(--ink-faint)] transition hover:bg-[color:var(--surface)] hover:text-[color:var(--coral)]"
                 title="Dismiss"
               >
                 <X className="h-4 w-4" />
@@ -113,5 +140,28 @@ export default function Alerts() {
         </div>
       )}
     </div>
+  );
+}
+
+function ClearStamp() {
+  return (
+    <svg
+      width="64"
+      height="64"
+      viewBox="0 0 64 64"
+      fill="none"
+      className="opacity-90"
+      style={{ transform: 'rotate(-6deg)' }}
+    >
+      <circle cx="32" cy="32" r="30" stroke="var(--brand)" strokeWidth="2" />
+      <circle cx="32" cy="32" r="24" stroke="var(--brand)" strokeWidth="1.5" strokeDasharray="3 4" />
+      <path
+        d="M21 33.5L28 40L43 24"
+        stroke="var(--brand)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

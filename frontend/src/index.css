@@ -1,1 +1,39 @@
 @import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,680&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --ink: #1b1b1b;
+  --ink-soft: #63666e;
+  --ink-faint: #9b9fa6;
+
+  --paper: #f6f4fb;
+  --surface: #ffffff;
+
+  --brand: #1dbf73;
+  --brand-dark: #0ea366;
+  --brand-tint: #e3f8ed;
+
+  --gold: #6153bd;
+  --gold-tint: #ede9fb;
+
+  --coral: #e23b4e;
+  --coral-tint: #fce8ea;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Reusable torn-ticket perforation strip — unchanged, still used on Alerts cards */
+.ticket-perf {
+  background-image: radial-gradient(
+    circle at 6px 4px,
+    var(--paper) 3px,
+    transparent 3.5px
+  );
+  background-size: 12px 8px;
+  background-repeat: repeat-x;
+}

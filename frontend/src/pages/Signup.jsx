@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Building2 } from 'lucide-react';
+import { Building2, ArrowRight, Users, ClipboardCheck, Wallet } from 'lucide-react';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -18,7 +18,6 @@ export default function Signup() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await signup(name, email, password, role);
       navigate('/dashboard');
@@ -30,73 +29,125 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900">
-            <Building2 className="h-6 w-6 text-white" />
+    <div className="flex min-h-screen bg-white">
+      {/* Left branded panel */}
+      <div className="relative hidden w-1/2 overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-violet-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-20"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 75% 15%, rgba(251,191,36,0.4) 0%, transparent 40%), radial-gradient(circle at 15% 80%, rgba(129,140,248,0.5) 0%, transparent 45%)',
+          }}
+        />
+
+        <div className="relative flex items-center gap-2.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
+            <Building2 className="h-5 w-5 text-amber-400" />
           </div>
-          <h1 className="text-xl font-semibold text-slate-900">Property Manager</h1>
-          <p className="mt-1 text-sm text-slate-500">Create your account</p>
+          <span className="text-lg font-semibold text-white">Property Manager</span>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="relative">
+          <h1 className="max-w-md text-4xl font-semibold leading-tight text-white">
+            Built for the way property teams actually work.
+          </h1>
+          <p className="mt-4 max-w-sm text-indigo-200">
+            Whether you manage the portfolio or fix what's broken, everything you need is in one place.
+          </p>
+
+          <div className="mt-10 space-y-3">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/20">
+                  <Users className="h-4 w-4 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">For property managers</p>
+                  <p className="text-xs text-indigo-300">Full portfolio visibility and control</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/20">
+                  <ClipboardCheck className="h-4 w-4 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">For contractors</p>
+                  <p className="text-xs text-indigo-300">Only the jobs assigned to you, nothing else</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative flex items-center gap-2 text-xs text-indigo-300">
+          <Wallet className="h-4 w-4" />
+          Free to get started, no credit card required
+        </div>
+      </div>
+
+      {/* Right form panel */}
+      <div className="flex w-full items-center justify-center px-6 py-10 lg:w-1/2">
+        <div className="w-full max-w-sm">
+          <div className="mb-6 flex items-center gap-2.5 lg:hidden">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-950">
+              <Building2 className="h-5 w-5 text-amber-400" />
+            </div>
+            <span className="text-lg font-semibold text-slate-900">Property Manager</span>
+          </div>
+
+          <h2 className="text-2xl font-semibold text-slate-900">Create your account</h2>
+          <p className="mt-1 mb-6 text-sm text-slate-500">Start managing your properties today</p>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Full name
-              </label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Full name</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
                 placeholder="Jane Doe"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Email
-              </label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Password
-              </label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
               <input
                 type="password"
                 required
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-1 focus:ring-slate-500"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
                 placeholder="At least 6 characters"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                I am a
-              </label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">I am a</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setRole('manager')}
-                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  className={`rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition ${
                     role === 'manager'
-                      ? 'border-slate-900 bg-slate-900 text-white'
-                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      ? 'border-indigo-950 bg-indigo-950 text-white'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                   }`}
                 >
                   Property Manager
@@ -104,10 +155,10 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={() => setRole('contractor')}
-                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  className={`rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition ${
                     role === 'contractor'
-                      ? 'border-slate-900 bg-slate-900 text-white'
-                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                      ? 'border-indigo-950 bg-indigo-950 text-white'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                   }`}
                 >
                   Contractor
@@ -116,27 +167,26 @@ export default function Signup() {
             </div>
 
             {error && (
-              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
-              </div>
+              <div className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Creating account...' : 'Create account'}
+              {!loading && <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />}
             </button>
           </form>
-        </div>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-slate-900 hover:underline">
-            Sign in
-          </Link>
-        </p>
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-indigo-700 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react';
 import { getDashboardSummary } from '../api/dashboard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from 'recharts';
-import { Building2, Wrench, CheckCircle2, IndianRupee } from 'lucide-react';
+import {
+  Building2,
+  Wrench,
+  CheckCircle2,
+  IndianRupee,
+  AlertTriangle,
+  Users,
+  ChevronRight,
+  TrendingUp,
+} from 'lucide-react';
 
 const STATUS_COLORS = {
-  Reported: '#94a3b8',
-  Triaged: '#3b82f6',
-  Scheduled: '#f59e0b',
-  Resolved: '#22c55e',
+  Reported: '#9b9fa6',
+  Triaged: '#6153bd',
+  Scheduled: '#6fcf9f',
+  Resolved: '#1dbf73',
 };
 
 export default function Dashboard() {
@@ -23,12 +32,19 @@ export default function Dashboard() {
   }, []);
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading dashboard...</p>;
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="flex items-center gap-3 text-sm text-[color:var(--ink-soft)]">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[color:var(--brand)] border-t-transparent" />
+          Loading dashboard...
+        </div>
+      </div>
+    );
   }
 
   if (error || !data) {
     return (
-      <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+      <div className="rounded-2xl bg-[color:var(--coral-tint)] px-4 py-3 text-sm text-[color:var(--coral)]">
         {error || 'No data available.'}
       </div>
     );
@@ -38,81 +54,134 @@ export default function Dashboard() {
     name: status,
     value: count,
   }));
-
   const weeklyChartData = data.maintenance.resolved_per_week_last_8_weeks.map((w) => ({
     week: w.week_ending.slice(5),
     resolved: w.count,
   }));
-
   const contractorEntries = Object.entries(data.maintenance.by_contractor_open_only);
+  const priorityEntries = Object.entries(data.maintenance.by_priority_open_only);
+  const totalStatusCount = statusChartData.reduce((s, x) => s + x.value, 0);
+  const occupancyPct = data.units.total > 0 ? Math.round((data.units.occupied / data.units.total) * 100) : 0;
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">Portfolio overview</p>
+      {/* Header */}
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-['Fraunces'] text-[28px] font-semibold leading-none text-[color:var(--ink)]">
+            Dashboard
+          </h1>
+          <p className="mt-2 text-sm text-[color:var(--ink-soft)]">
+            Here&apos;s how your portfolio is doing this month.
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--gold-tint)] px-3.5 py-1.5 text-xs font-semibold text-[color:var(--gold)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--gold)]" />
+          {data.rent.current_month}
+        </span>
       </div>
 
-      <div className="mb-6 grid grid-cols-4 gap-4">
-        <StatCard
+      {/* KPI row */}
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
           icon={<Building2 className="h-5 w-5" />}
-          label="Total Units"
           value={data.units.total}
-          sub={`${data.units.occupied} occupied · ${data.units.vacant} vacant`}
+          label="Total Units"
+          sub={`${occupancyPct}% occupied`}
+          accent="gold"
         />
-        <StatCard
+        <KpiCard
           icon={<Wrench className="h-5 w-5" />}
-          label="Open Requests"
           value={data.maintenance.open_requests}
-          sub="Reported, Triaged, or Scheduled"
+          label="Open Requests"
+          sub="need attention"
+          accent="coral"
         />
-        <StatCard
+        <KpiCard
           icon={<CheckCircle2 className="h-5 w-5" />}
-          label="Resolved This Week"
           value={data.maintenance.resolved_this_week}
-          sub="Last 7 days"
+          label="Resolved"
+          sub="last 7 days"
+          accent="brand"
         />
-        <StatCard
+        <KpiCard
           icon={<IndianRupee className="h-5 w-5" />}
-          label="Rent Collected"
           value={`₹${data.rent.total_collected_this_month.toLocaleString('en-IN')}`}
-          sub={`${data.rent.current_month} · ${data.rent.units_overdue_this_month} unit(s) overdue`}
+          label="Rent Collected"
+          sub={`${data.rent.units_overdue_this_month} overdue`}
+          accent="neutral"
         />
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Requests by Status</h2>
+      {/* Bento grid */}
+      <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2 rounded-3xl border border-[color:var(--ink)]/8 bg-[color:var(--surface)] p-6 shadow-[0_1px_2px_rgba(23,36,29,0.04)]">
+          <div className="mb-5 flex items-center justify-between">
+            <div>
+              <h2 className="font-['Fraunces'] text-lg font-semibold text-[color:var(--ink)]">Portfolio Health</h2>
+              <p className="text-sm text-[color:var(--ink-soft)]">Maintenance status distribution</p>
+            </div>
+            <TrendingUp className="h-4 w-4 text-[color:var(--ink-faint)]" />
+          </div>
+
           {statusChartData.length === 0 ? (
-            <p className="text-sm text-slate-400">No requests yet.</p>
+            <p className="py-16 text-center text-sm text-[color:var(--ink-soft)]">No requests yet.</p>
           ) : (
-            <div className="flex items-center gap-6">
-              <ResponsiveContainer width={160} height={160}>
-                <PieChart>
-                  <Pie
-                    data={statusChartData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={45}
-                    outerRadius={70}
-                    paddingAngle={2}
-                  >
-                    {statusChartData.map((entry) => (
-                      <Cell key={entry.name} fill={STATUS_COLORS[entry.name]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="space-y-2">
-                {statusChartData.map((entry) => (
-                  <div key={entry.name} className="flex items-center gap-2 text-sm">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: STATUS_COLORS[entry.name] }}
+            <div className="flex flex-col items-center gap-8 sm:flex-row">
+              <div className="relative shrink-0">
+                <ResponsiveContainer width={190} height={190}>
+                  <PieChart>
+                    <Pie
+                      data={statusChartData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={58}
+                      outerRadius={88}
+                      paddingAngle={3}
+                      strokeWidth={0}
+                    >
+                      {statusChartData.map((entry) => (
+                        <Cell key={entry.name} fill={STATUS_COLORS[entry.name]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: '1px solid rgba(23,36,29,0.08)',
+                        fontSize: 12,
+                      }}
                     />
-                    <span className="text-slate-600">{entry.name}</span>
-                    <span className="font-medium text-slate-900">{entry.value}</span>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="font-['Fraunces'] text-2xl font-semibold tabular-nums text-[color:var(--ink)]">
+                    {totalStatusCount}
+                  </span>
+                  <span className="text-[11px] font-medium text-[color:var(--ink-faint)]">requests</span>
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-3.5">
+                {statusChartData.map((entry) => (
+                  <div key={entry.name}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 text-[color:var(--ink)]/80">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[entry.name] }} />
+                        {entry.name}
+                      </span>
+                      <span className="font-semibold tabular-nums text-[color:var(--ink)]">
+                        {Math.round((entry.value / totalStatusCount) * 100)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--paper)]">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${(entry.value / totalStatusCount) * 100}%`,
+                          backgroundColor: STATUS_COLORS[entry.name],
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -120,71 +189,64 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Open Requests by Priority</h2>
-          {Object.keys(data.maintenance.by_priority_open_only).length === 0 ? (
-            <p className="text-sm text-slate-400">No open requests.</p>
-          ) : (
-            <div className="space-y-3">
-              {Object.entries(data.maintenance.by_priority_open_only).map(([priority, count]) => {
-                const max = Math.max(...Object.values(data.maintenance.by_priority_open_only));
-                const pct = (count / max) * 100;
-                return (
-                  <div key={priority}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-slate-600">{priority}</span>
-                      <span className="font-medium text-slate-900">{count}</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-slate-900"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+        <div className="rounded-3xl border border-[color:var(--ink)]/8 bg-[color:var(--surface)] p-6 shadow-[0_1px_2px_rgba(23,36,29,0.04)]">
+          <h2 className="mb-4 font-['Fraunces'] text-lg font-semibold text-[color:var(--ink)]">Activity</h2>
+
+          {data.rent.units_overdue_this_month > 0 && (
+            <div className="mb-4 flex items-center justify-between rounded-xl bg-[color:var(--coral-tint)] px-3.5 py-3">
+              <span className="flex items-center gap-2 text-sm font-medium text-[color:var(--coral)]">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                {data.rent.units_overdue_this_month} unit(s) overdue
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-[color:var(--coral)]" />
             </div>
           )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <ActivityStat value={`${occupancyPct}%`} label="Occupancy" />
+            <ActivityStat value={data.rent.underpaid_count} label="Underpaid" />
+            <ActivityStat value={data.units.vacant} label="Vacant" />
+            <ActivityStat value={contractorEntries.length} label="Contractors" />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Resolved per Week (Last 8 Weeks)</h2>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={weeklyChartData}>
-              <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip />
-              <Bar dataKey="resolved" fill="#0f172a" radius={[4, 4, 0, 0]} />
+      {/* Secondary row */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="rounded-3xl border border-[color:var(--ink)]/8 bg-[color:var(--surface)] p-6 shadow-[0_1px_2px_rgba(23,36,29,0.04)]">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[color:var(--ink)]">Resolved per Week</h2>
+            <span className="text-xs text-[color:var(--ink-faint)]">Last 8 weeks</span>
+          </div>
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={weeklyChartData} barCategoryGap="30%">
+              <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#9b9fa6' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#9b9fa6' }} axisLine={false} tickLine={false} width={24} />
+              <Tooltip
+                cursor={{ fill: '#f6f4fb' }}
+                contentStyle={{ borderRadius: 12, border: '1px solid rgba(23,36,29,0.08)', fontSize: 12 }}
+              />
+              <Bar dataKey="resolved" fill="#1dbf73" radius={[6, 6, 0, 0]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 text-sm font-semibold text-slate-900">Open Requests by Contractor</h2>
-          {contractorEntries.length === 0 ? (
-            <p className="text-sm text-slate-400">No contractors currently assigned.</p>
+        <div className="rounded-3xl border border-[color:var(--ink)]/8 bg-[color:var(--surface)] p-6 shadow-[0_1px_2px_rgba(23,36,29,0.04)]">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[color:var(--ink)]">By Priority &amp; Contractor</h2>
+            <Users className="h-4 w-4 text-[color:var(--ink-faint)]" />
+          </div>
+          {priorityEntries.length === 0 && contractorEntries.length === 0 ? (
+            <p className="py-8 text-center text-sm text-[color:var(--ink-soft)]">No open requests.</p>
           ) : (
             <div className="space-y-3">
+              {priorityEntries.map(([priority, count]) => {
+                const max = Math.max(...priorityEntries.map(([, c]) => c), ...contractorEntries.map(([, c]) => c), 1);
+                return <MiniBar key={priority} label={priority} value={count} max={max} colorFrom="#6153bd" colorTo="#8a7dd4" />;
+              })}
               {contractorEntries.map(([name, count]) => {
-                const max = Math.max(...contractorEntries.map(([, c]) => c));
-                const pct = (count / max) * 100;
-                return (
-                  <div key={name}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span className="text-slate-600">{name}</span>
-                      <span className="font-medium text-slate-900">{count}</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-slate-900"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
+                const max = Math.max(...priorityEntries.map(([, c]) => c), ...contractorEntries.map(([, c]) => c), 1);
+                return <MiniBar key={name} label={name} value={count} max={max} colorFrom="#1dbf73" colorTo="#6fcf9f" />;
               })}
             </div>
           )}
@@ -194,13 +256,46 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ icon, label, value, sub }) {
+function KpiCard({ icon, value, label, sub, accent }) {
+  const styles = {
+    neutral: 'bg-[color:var(--paper)] text-[color:var(--ink-soft)]',
+    coral: 'bg-[color:var(--coral-tint)] text-[color:var(--coral)]',
+    brand: 'bg-[color:var(--brand-tint)] text-[color:var(--brand-dark)]',
+    gold: 'bg-[color:var(--gold-tint)] text-[color:var(--gold)]',
+  };
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="mb-2 flex items-center gap-2 text-slate-400">{icon}</div>
-      <p className="text-2xl font-semibold text-slate-900">{value}</p>
-      <p className="text-sm font-medium text-slate-600">{label}</p>
-      <p className="mt-0.5 text-xs text-slate-400">{sub}</p>
+    <div className="group rounded-2xl border border-[color:var(--ink)]/8 bg-[color:var(--surface)] p-5 shadow-[0_1px_2px_rgba(23,36,29,0.04)] transition hover:-translate-y-0.5 hover:border-[color:var(--ink)]/15 hover:shadow-[0_8px_24px_rgba(23,36,29,0.08)]">
+      <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl ${styles[accent]}`}>{icon}</div>
+      <p className="truncate font-['Fraunces'] text-2xl font-semibold tabular-nums text-[color:var(--ink)]">{value}</p>
+      <p className="mt-1 text-sm font-medium text-[color:var(--ink)]/80">{label}</p>
+      <p className="mt-0.5 text-xs text-[color:var(--ink-faint)]">{sub}</p>
+    </div>
+  );
+}
+
+function ActivityStat({ value, label }) {
+  return (
+    <div className="rounded-xl bg-[color:var(--paper)] p-3">
+      <p className="font-['Fraunces'] text-xl font-semibold tabular-nums text-[color:var(--ink)]">{value}</p>
+      <p className="text-xs text-[color:var(--ink-soft)]">{label}</p>
+    </div>
+  );
+}
+
+function MiniBar({ label, value, max, colorFrom, colorTo }) {
+  const pct = (value / max) * 100;
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-sm">
+        <span className="truncate text-[color:var(--ink-soft)]">{label}</span>
+        <span className="ml-2 shrink-0 font-semibold tabular-nums text-[color:var(--ink)]">{value}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-[color:var(--paper)]">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, backgroundImage: `linear-gradient(to right, ${colorFrom}, ${colorTo})` }}
+        />
+      </div>
     </div>
   );
 }
