@@ -61,15 +61,15 @@ export default function Units() {
     <div>
       <div className="mb-6 flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Units</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="font-['Fraunces'] text-[28px] font-semibold text-[color:var(--ink)]">Units</h1>
+          <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
             {activeCount} active {activeCount === 1 ? 'unit' : 'units'} · ₹{totalRent.toLocaleString('en-IN')} monthly rent roll
           </p>
         </div>
         {isManager && (
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-2 rounded-xl bg-indigo-950 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-900"
+            className="flex items-center gap-2 rounded-xl bg-[color:var(--brand)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[color:var(--brand-dark)]"
           >
             <Plus className="h-4 w-4" />
             Add Unit
@@ -89,63 +89,65 @@ export default function Units() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="mb-4 rounded-xl bg-[color:var(--red-tint)] px-4 py-3 text-sm text-[color:var(--red)]">{error}</div>
       )}
 
       {loading ? (
-        <p className="text-sm text-slate-400">Loading units...</p>
+        <p className="text-sm text-[color:var(--ink-soft)]">Loading units...</p>
       ) : units.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
-          <Building2 className="mx-auto mb-3 h-8 w-8 text-slate-300" />
-          <p className="text-sm text-slate-500">No units yet.</p>
+        <div className="rounded-2xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] py-16 text-center">
+          <Building2 className="mx-auto mb-3 h-8 w-8 text-[color:var(--ink-faint)]" />
+          <p className="text-sm text-[color:var(--ink-soft)]">No units yet.</p>
           {isManager && (
-            <button onClick={openCreateModal} className="mt-2 text-sm font-medium text-indigo-700 hover:underline">
+            <button onClick={openCreateModal} className="mt-2 text-sm font-medium text-[color:var(--brand)] hover:text-[color:var(--brand-dark)]">
               Add your first unit
             </button>
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-100">
-                <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Unit</th>
-                <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Tenant</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-400">Rent</th>
-                <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Status</th>
+              <tr className="border-b border-[color:var(--border)] bg-[color:var(--surface-2)]/60">
+                <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[color:var(--ink-faint)]">Unit</th>
+                <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[color:var(--ink-faint)]">Tenant</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[color:var(--ink-faint)]">Rent</th>
+                <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[color:var(--ink-faint)]">Status</th>
                 {isManager && <th className="px-5 py-3"></th>}
               </tr>
             </thead>
             <tbody>
               {units.map((unit) => (
-                <tr key={unit.id} className="border-b border-slate-50 transition last:border-0 hover:bg-slate-50/60">
+                <tr key={unit.id} className="border-b border-[color:var(--border)] transition last:border-0 hover:bg-[color:var(--surface-2)]/50">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-sm font-semibold text-indigo-700">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--brand-tint)] text-sm font-semibold text-[color:var(--brand)]">
                         {unit.unit_number.slice(0, 2)}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-slate-900">{unit.unit_number}</p>
-                        <p className="flex items-center gap-1 truncate text-xs text-slate-400">
+                        <p className="font-medium text-[color:var(--ink)]">{unit.unit_number}</p>
+                        <p className="flex items-center gap-1 truncate text-xs text-[color:var(--ink-faint)]">
                           <MapPin className="h-3 w-3 shrink-0" />
                           {unit.address}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-slate-600">
-                    {unit.tenant_name || <span className="text-slate-400">Vacant</span>}
+                  <td className="px-5 py-4 text-[color:var(--ink-soft)]">
+                    {unit.tenant_name || <span className="text-[color:var(--ink-faint)]">Vacant</span>}
                   </td>
-                  <td className="px-5 py-4 text-right font-medium tabular-nums text-slate-900">
+                  <td className="px-5 py-4 text-right font-medium tabular-nums text-[color:var(--ink)]">
                     ₹{unit.rent_amount.toLocaleString('en-IN')}
                   </td>
                   <td className="px-5 py-4">
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                        unit.is_archived ? 'bg-slate-100 text-slate-500' : 'bg-green-50 text-green-700'
+                        unit.is_archived
+                          ? 'bg-[color:var(--surface-2)] text-[color:var(--ink-faint)]'
+                          : 'bg-[color:var(--green-tint)] text-[color:var(--green)]'
                       }`}
                     >
-                      <span className={`h-1.5 w-1.5 rounded-full ${unit.is_archived ? 'bg-slate-400' : 'bg-green-500'}`} />
+                      <span className={`h-1.5 w-1.5 rounded-full ${unit.is_archived ? 'bg-[color:var(--ink-faint)]' : 'bg-[color:var(--green)]'}`} />
                       {unit.is_archived ? 'Archived' : 'Active'}
                     </span>
                   </td>
@@ -154,15 +156,17 @@ export default function Units() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => openEditModal(unit)}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                          className="rounded-lg p-2 text-[color:var(--ink-faint)] transition hover:bg-[color:var(--surface-2)] hover:text-[color:var(--ink)]"
                           title="Edit"
+                          aria-label={`Edit ${unit.unit_number}`}
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleArchiveToggle(unit)}
-                          className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                          className="rounded-lg p-2 text-[color:var(--ink-faint)] transition hover:bg-[color:var(--surface-2)] hover:text-[color:var(--ink)]"
                           title={unit.is_archived ? 'Restore' : 'Archive'}
+                          aria-label={`${unit.is_archived ? 'Restore' : 'Archive'} ${unit.unit_number}`}
                         >
                           {unit.is_archived ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                         </button>
@@ -195,7 +199,9 @@ function FilterChip({ active, onClick, children }) {
     <button
       onClick={onClick}
       className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-        active ? 'bg-indigo-950 text-white' : 'bg-white text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50'
+        active
+          ? 'bg-[color:var(--brand)] text-white'
+          : 'bg-[color:var(--surface)] text-[color:var(--ink-soft)] ring-1 ring-[color:var(--border)] hover:bg-[color:var(--surface-2)]'
       }`}
     >
       {children}
@@ -238,42 +244,42 @@ function UnitModal({ unit, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">{unit ? 'Edit Unit' : 'Add Unit'}</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+          <h2 className="font-['Fraunces'] text-lg font-semibold text-[color:var(--ink)]">{unit ? 'Edit Unit' : 'Add Unit'}</h2>
+          <button onClick={onClose} aria-label="Close dialog" className="rounded-lg p-1 text-[color:var(--ink-faint)] hover:bg-[color:var(--surface-2)] hover:text-[color:var(--ink)]">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Unit number</label>
+            <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">Unit number</label>
             <input
               type="text"
               required
               value={unitNumber}
               onChange={(e) => setUnitNumber(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
               placeholder="A101"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Address</label>
+            <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">Address</label>
             <input
               type="text"
               required
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
               placeholder="123 Main Street"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">Monthly rent (₹)</label>
+            <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">Monthly rent (₹)</label>
             <input
               type="number"
               required
@@ -281,38 +287,38 @@ function UnitModal({ unit, onClose, onSaved }) {
               step="0.01"
               value={rentAmount}
               onChange={(e) => setRentAmount(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
               placeholder="15000"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Tenant name <span className="text-slate-400">(optional)</span>
+            <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">
+              Tenant name <span className="text-[color:var(--ink-faint)]">(optional)</span>
             </label>
             <input
               type="text"
               value={tenantName}
               onChange={(e) => setTenantName(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
               placeholder="Leave blank if vacant"
             />
           </div>
 
-          {error && <div className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>}
+          {error && <div className="rounded-xl bg-[color:var(--red-tint)] px-4 py-2.5 text-sm text-[color:var(--red)]">{error}</div>}
 
           <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="flex-1 rounded-xl border border-[color:var(--border)] px-4 py-2.5 text-sm font-medium text-[color:var(--ink-soft)] hover:bg-[color:var(--surface-2)]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 rounded-xl bg-indigo-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-900 disabled:opacity-50"
+              className="flex-1 rounded-xl bg-[color:var(--brand)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--brand-dark)] disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save'}
             </button>

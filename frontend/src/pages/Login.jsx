@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Building2, ArrowRight, ShieldCheck, Wrench, TrendingUp } from 'lucide-react';
+import {
+  Building2,
+  ArrowRight,
+  Users,
+  ClipboardCheck,
+  Wallet,
+} from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -16,130 +22,211 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      setError(
+        err.response?.data?.error ||
+          'Login failed. Please check your email and password.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Left branded panel */}
-      <div className="relative hidden w-1/2 overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-violet-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
+    <div className="flex h-screen w-screen overflow-hidden bg-[color:var(--bg)]">
+
+      {/* Left brand panel */}
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-[color:var(--border)] p-12 lg:flex">
+
         <div
-          className="pointer-events-none absolute inset-0 opacity-20"
+          className="pointer-events-none absolute inset-0 opacity-60"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 20% 20%, rgba(251,191,36,0.4) 0%, transparent 40%), radial-gradient(circle at 80% 70%, rgba(129,140,248,0.5) 0%, transparent 45%)',
+              'radial-gradient(circle at 80% 15%, rgba(109,94,242,0.25) 0%, transparent 40%), radial-gradient(circle at 15% 85%, rgba(227,179,65,0.15) 0%, transparent 45%)',
           }}
         />
 
+        {/* Logo */}
         <div className="relative flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-            <Building2 className="h-5 w-5 text-amber-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand)]">
+            <Building2 className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-semibold text-white">Property Manager</span>
+
+          <span className="font-['Fraunces'] text-lg font-semibold text-[color:var(--ink)]">
+            Property Manager
+          </span>
         </div>
 
+        {/* Main message */}
         <div className="relative">
-          <h1 className="max-w-md text-4xl font-semibold leading-tight text-white">
-            Run your entire portfolio from one place.
+
+          <h1 className="max-w-md font-['Fraunces'] text-[40px] font-semibold leading-[1.15] text-[color:var(--ink)]">
+            Everything you need to manage your properties.
           </h1>
-          <p className="mt-4 max-w-sm text-indigo-200">
-            Units, maintenance, rent, and alerts — no more spreadsheets or sticky notes.
+
+          <p className="mt-3 max-w-sm text-[15px] leading-6 text-[color:var(--ink-soft)]">
+            Keep your properties, tenants, rent and maintenance work
+            organized in one place.
           </p>
 
-          <div className="mt-10 flex flex-col gap-4">
-            {[
-              { icon: Building2, text: 'Track every unit and tenant in one dashboard' },
-              { icon: Wrench, text: 'Maintenance requests from report to resolved' },
-              { icon: TrendingUp, text: 'Rent collection, alerts, and reports on autopilot' },
-            ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-3 rounded-xl bg-white/5 p-3 backdrop-blur">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/20">
-                  <Icon className="h-4 w-4 text-amber-400" />
-                </div>
-                <span className="text-sm text-indigo-100">{text}</span>
+          <div className="mt-8 space-y-2.5">
+
+            {/* Feature 1 */}
+            <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3.5 py-3">
+
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--gold-tint)]">
+                <Users className="h-4 w-4 text-[color:var(--gold)]" />
               </div>
-            ))}
+
+              <div>
+                <p className="text-sm font-medium text-[color:var(--ink)]">
+                  Manage your tenants
+                </p>
+
+                <p className="text-xs text-[color:var(--ink-faint)]">
+                  Keep tenant information organized
+                </p>
+              </div>
+
+            </div>
+
+            {/* Feature 2 */}
+            <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3.5 py-3">
+
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--gold-tint)]">
+                <ClipboardCheck className="h-4 w-4 text-[color:var(--gold)]" />
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-[color:var(--ink)]">
+                  Stay on top of maintenance
+                </p>
+
+                <p className="text-xs text-[color:var(--ink-faint)]">
+                  Track issues from report to resolution
+                </p>
+              </div>
+
+            </div>
+
           </div>
         </div>
 
-        <div className="relative flex items-center gap-2 text-xs text-indigo-300">
-          <ShieldCheck className="h-4 w-4" />
-          Server-side role enforcement on every action
-        </div>
+        {/* Bottom note */}
+        <p className="relative flex items-center gap-2 text-xs text-[color:var(--ink-faint)]">
+          <Wallet className="h-4 w-4" />
+          Your property operations, all in one place
+        </p>
+
       </div>
 
-      {/* Right form panel */}
-      <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
-        <div className="w-full max-w-sm">
-          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-950">
-              <Building2 className="h-5 w-5 text-amber-400" />
+      {/* Right login panel */}
+      <div className="flex w-full items-center justify-center overflow-y-auto px-6 lg:w-1/2">
+
+        <div className="w-full max-w-sm py-8">
+
+          {/* Mobile logo */}
+          <div className="mb-7 flex items-center gap-2.5 lg:hidden">
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand)]">
+              <Building2 className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-semibold text-slate-900">Property Manager</span>
+
+            <span className="font-['Fraunces'] text-lg font-semibold text-[color:var(--ink)]">
+              Property Manager
+            </span>
+
           </div>
 
-          <h2 className="text-2xl font-semibold text-slate-900">Welcome back</h2>
-          <p className="mt-1 mb-8 text-sm text-slate-500">Sign in to manage your properties</p>
+          {/* Heading */}
+          <h2 className="font-['Fraunces'] text-[26px] font-semibold text-[color:var(--ink)]">
+            Welcome back
+          </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="mt-1 mb-5 text-sm text-[color:var(--ink-soft)]">
+            Sign in to continue managing your properties
+          </p>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-3">
+
+            {/* Email */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+              <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">
+                Email
+              </label>
+
               <input
                 type="email"
                 required
+                autoFocus
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3.5 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
                 placeholder="you@example.com"
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
+              <div className="mb-1.5 flex items-center justify-between">
+
+                <label className="block text-sm font-medium text-[color:var(--ink)]">
+                  Password
+                </label>
+
+              </div>
+
               <input
                 type="password"
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
-                placeholder="••••••••"
+                className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3.5 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
+                placeholder="Enter your password"
               />
             </div>
 
+            {/* Error */}
             {error && (
-              <div className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>
+              <div className="rounded-lg bg-[color:var(--red-tint)] px-3.5 py-2.5 text-sm text-[color:var(--red)]">
+                {error}
+              </div>
             )}
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group flex w-full items-center justify-center gap-2 rounded-lg bg-[color:var(--brand)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[color:var(--brand-dark)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign in'}
+
               {!loading && (
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               )}
             </button>
+
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          {/* Signup link */}
+          <p className="mt-5 text-center text-sm text-[color:var(--ink-soft)]">
             Don't have an account?{' '}
-            <Link to="/signup" className="font-medium text-indigo-700 hover:underline">
-              Sign up
+
+            <Link
+              to="/signup"
+              className="font-medium text-[color:var(--brand)] hover:text-[color:var(--brand-dark)]"
+            >
+              Create one
             </Link>
           </p>
 
-          <div className="mt-8 rounded-xl border border-slate-100 bg-slate-50 p-4">
-            <p className="text-xs font-medium text-slate-500">Demo credentials</p>
-            <p className="mt-1 text-xs text-slate-400">manager@test.com · test123</p>
-          </div>
         </div>
       </div>
     </div>

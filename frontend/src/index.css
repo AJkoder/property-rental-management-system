@@ -3,37 +3,61 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,680&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --ink: #1b1b1b;
-  --ink-soft: #63666e;
-  --ink-faint: #9b9fa6;
+  --paper: #f3f2f8;
+  --surface: #fffdfa;
+  --surface-2: #eeedf4;
 
-  --paper: #f6f4fb;
-  --surface: #ffffff;
+  --brand: #6861a5;
+  --brand-dark: #565087;
+  --brand-tint: #e9e7f5;
 
-  --brand: #1dbf73;
-  --brand-dark: #0ea366;
-  --brand-tint: #e3f8ed;
+  --ink: #292735;
+  --ink-soft: #686573;
+  --ink-faint: #9996a3;
 
-  --gold: #6153bd;
-  --gold-tint: #ede9fb;
+  --border: #dedce6;
 
-  --coral: #e23b4e;
-  --coral-tint: #fce8ea;
+  --green: #4f9b78;
+  --green-tint: #e7f2ec;
+
+  --gold: #b48a3c;
+  --gold-tint: #f5eedf;
+
+  --red: #c56a67;
+  --red-tint: #f7e9e8;
+
+  --coral: #c56a67;
+  --coral-tint: #f7e9e8;
 }
 
 body {
   background-color: var(--paper);
   color: var(--ink);
   font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Reusable torn-ticket perforation strip — unchanged, still used on Alerts cards */
-.ticket-perf {
-  background-image: radial-gradient(
-    circle at 6px 4px,
-    var(--paper) 3px,
-    transparent 3.5px
-  );
-  background-size: 12px 8px;
-  background-repeat: repeat-x;
+::selection {
+  background-color: var(--brand-tint);
+  color: var(--brand-dark);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 999px;
+  border: 2px solid var(--paper);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ink-faint);
 }

@@ -4,10 +4,10 @@ import { bulkRecordPayments, exportPaymentsCsv, getPayments } from '../api/payme
 import { Plus, Trash2, Download, CheckCircle2, AlertCircle, XCircle, IndianRupee } from 'lucide-react';
 
 const STATUS_STYLE = {
-  matched: { icon: CheckCircle2, text: 'text-[color:var(--brand)]', dot: 'bg-[color:var(--brand)]' },
-  underpaid: { icon: AlertCircle, text: 'text-[color:var(--gold)]', dot: 'bg-[color:var(--gold)]' },
-  overpaid: { icon: AlertCircle, text: 'text-[color:var(--ink-soft)]', dot: 'bg-[color:var(--ink-soft)]' },
-  unmatched: { icon: XCircle, text: 'text-[color:var(--coral)]', dot: 'bg-[color:var(--coral)]' },
+  matched: { icon: CheckCircle2, text: 'text-[color:var(--green)]' },
+  underpaid: { icon: AlertCircle, text: 'text-[color:var(--gold)]' },
+  overpaid: { icon: AlertCircle, text: 'text-[color:var(--ink-soft)]' },
+  unmatched: { icon: XCircle, text: 'text-[color:var(--red)]' },
 };
 
 const STATUS_LABEL = {
@@ -92,7 +92,7 @@ export default function Payments() {
       <div className="mb-7 flex items-end justify-between">
         <div className="flex items-center gap-3.5">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--brand)]">
-            <IndianRupee className="h-5 w-5 text-[color:var(--paper)]" />
+            <IndianRupee className="h-5 w-5 text-white" />
           </div>
           <div>
             <h1 className="font-['Fraunces'] text-[28px] font-semibold leading-none text-[color:var(--ink)]">
@@ -106,7 +106,7 @@ export default function Payments() {
         <button
           onClick={handleExport}
           disabled={exporting}
-          className="flex items-center gap-2 rounded-xl border-[1.5px] border-[color:var(--ink)]/15 bg-[color:var(--surface)] px-4 py-2.5 text-sm font-medium text-[color:var(--ink)] transition hover:border-[color:var(--brand)] hover:text-[color:var(--brand)] disabled:opacity-50"
+          className="flex items-center gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5 text-sm font-medium text-[color:var(--ink)] transition hover:border-[color:var(--brand)] hover:text-[color:var(--brand)] disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           {exporting ? 'Exporting...' : 'Export CSV'}
@@ -116,28 +116,22 @@ export default function Payments() {
       {/* Stat strip */}
       {history.length > 0 && (
         <div className="mb-7 grid grid-cols-4 gap-4">
-          <StatCard
-            label="Collected this period"
-            value={`₹${totalCollected.toLocaleString('en-IN')}`}
-            accent="gold"
-          />
-          <StatCard label="Matched" value={statusCounts.matched || 0} accent="brand" />
+          <StatCard label="Collected this period" value={`₹${totalCollected.toLocaleString('en-IN')}`} accent="gold" />
+          <StatCard label="Matched" value={statusCounts.matched || 0} accent="green" />
           <StatCard label="Underpaid" value={statusCounts.underpaid || 0} accent="gold" />
-          <StatCard label="Unmatched" value={statusCounts.unmatched || 0} accent="coral" />
+          <StatCard label="Unmatched" value={statusCounts.unmatched || 0} accent="red" />
         </div>
       )}
 
       {/* Bulk entry — receipt card */}
-      <div className="relative mb-8 overflow-hidden rounded-3xl border border-[color:var(--ink)]/10 bg-[color:var(--surface)] pt-6 shadow-[0_1px_0_rgba(23,36,29,0.04)]">
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] pt-6">
         <div
           className="absolute inset-x-0 top-0 h-2 bg-[color:var(--brand)]"
           style={{
-            maskImage:
-              'radial-gradient(circle at 6px 4px, transparent 3px, black 3.5px)',
+            maskImage: 'radial-gradient(circle at 6px 4px, transparent 3px, black 3.5px)',
             maskSize: '12px 8px',
             maskRepeat: 'repeat-x',
-            WebkitMaskImage:
-              'radial-gradient(circle at 6px 4px, transparent 3px, black 3.5px)',
+            WebkitMaskImage: 'radial-gradient(circle at 6px 4px, transparent 3px, black 3.5px)',
             WebkitMaskSize: '12px 8px',
             WebkitMaskRepeat: 'repeat-x',
           }}
@@ -153,7 +147,7 @@ export default function Payments() {
                 <select
                   value={row.unit_id}
                   onChange={(e) => updateRow(index, 'unit_id', e.target.value)}
-                  className="flex-1 rounded-xl border border-[color:var(--ink)]/15 bg-[color:var(--paper)] px-3 py-2.5 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/15"
+                  className="flex-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2.5 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
                 >
                   <option value="">Select unit</option>
                   {units.map((u) => (
@@ -167,18 +161,19 @@ export default function Payments() {
                   placeholder="Amount paid"
                   value={row.amount_paid}
                   onChange={(e) => updateRow(index, 'amount_paid', e.target.value)}
-                  className="w-36 rounded-xl border border-[color:var(--ink)]/15 bg-[color:var(--paper)] px-3 py-2.5 text-sm tabular-nums text-[color:var(--ink)] outline-none focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/15"
+                  className="w-36 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2.5 text-sm tabular-nums text-[color:var(--ink)] outline-none focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
                 />
                 <input
                   type="month"
                   value={row.month_covered}
                   onChange={(e) => updateRow(index, 'month_covered', e.target.value)}
-                  className="w-40 rounded-xl border border-[color:var(--ink)]/15 bg-[color:var(--paper)] px-3 py-2.5 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/15"
+                  className="w-40 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2.5 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
                 />
                 <button
                   onClick={() => removeRow(index)}
                   disabled={rows.length === 1}
-                  className="rounded-lg p-2 text-[color:var(--ink-faint)] transition hover:bg-[color:var(--coral-tint)] hover:text-[color:var(--coral)] disabled:opacity-30"
+                  aria-label="Remove row"
+                  className="rounded-lg p-2 text-[color:var(--ink-faint)] transition hover:bg-[color:var(--red-tint)] hover:text-[color:var(--red)] disabled:opacity-30 disabled:pointer-events-none"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -186,7 +181,7 @@ export default function Payments() {
             ))}
           </div>
 
-          <div className="mt-4 flex items-center justify-between border-t border-dashed border-[color:var(--ink)]/12 pt-4">
+          <div className="mt-4 flex items-center justify-between border-t border-dashed border-[color:var(--border)] pt-4">
             <button
               onClick={addRow}
               className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--brand)] hover:text-[color:var(--brand-dark)]"
@@ -197,14 +192,14 @@ export default function Payments() {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="rounded-xl bg-[color:var(--ink)] px-5 py-2.5 text-sm font-medium text-[color:var(--paper)] transition hover:bg-[color:var(--brand-dark)] disabled:opacity-50"
+              className="rounded-xl bg-[color:var(--brand)] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[color:var(--brand-dark)] disabled:opacity-50"
             >
               {submitting ? 'Recording...' : 'Record payments'}
             </button>
           </div>
 
           {error && (
-            <div className="mt-4 rounded-xl bg-[color:var(--coral-tint)] px-4 py-2.5 text-sm text-[color:var(--coral)]">
+            <div className="mt-4 rounded-xl bg-[color:var(--red-tint)] px-4 py-2.5 text-sm text-[color:var(--red)]">
               {error}
             </div>
           )}
@@ -236,19 +231,19 @@ export default function Payments() {
           Payment history
         </h2>
         {history.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-[color:var(--ink)]/20 bg-[color:var(--surface)] py-14 text-center">
+          <div className="rounded-2xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] py-14 text-center">
             <p className="text-sm text-[color:var(--ink-soft)]">No payments recorded yet.</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-3xl border border-[color:var(--ink)]/10 bg-[color:var(--surface)]">
+          <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-[color:var(--ink)]/10 bg-[color:var(--paper)]/60">
-                  <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-soft)]">Unit</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-soft)]">Month</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-[color:var(--ink-soft)]">Expected</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-[color:var(--ink-soft)]">Paid</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-soft)]">Status</th>
+                <tr className="border-b border-[color:var(--border)] bg-[color:var(--surface-2)]/60">
+                  <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-faint)]">Unit</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-faint)]">Month</th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold text-[color:var(--ink-faint)]">Expected</th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold text-[color:var(--ink-faint)]">Paid</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-faint)]">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -257,9 +252,7 @@ export default function Payments() {
                   return (
                     <tr
                       key={p.id}
-                      className={`border-b border-[color:var(--ink)]/5 last:border-0 ${
-                        i % 2 === 1 ? 'bg-[color:var(--paper)]/30' : ''
-                      }`}
+                      className={`border-b border-[color:var(--border)] last:border-0 ${i % 2 === 1 ? 'bg-[color:var(--surface-2)]/40' : ''}`}
                     >
                       <td className="px-5 py-3.5 font-medium text-[color:var(--ink)]">{p.unit_number}</td>
                       <td className="px-5 py-3.5 text-[color:var(--ink-soft)]">{p.month_covered}</td>
@@ -288,18 +281,10 @@ export default function Payments() {
 }
 
 function StatCard({ label, value, accent }) {
-  const accentColor = {
-    brand: 'var(--brand)',
-    gold: 'var(--gold)',
-    coral: 'var(--coral)',
-  }[accent];
-
+  const accentColor = { green: 'var(--green)', gold: 'var(--gold)', red: 'var(--red)' }[accent];
   return (
-    <div className="rounded-2xl border border-[color:var(--ink)]/10 bg-[color:var(--surface)] p-4">
-      <p
-        className="font-['Fraunces'] text-2xl font-semibold tabular-nums"
-        style={{ color: accentColor }}
-      >
+    <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+      <p className="font-['Fraunces'] text-2xl font-semibold tabular-nums" style={{ color: accentColor }}>
         {value}
       </p>
       <p className="mt-1 text-xs font-medium text-[color:var(--ink-soft)]">{label}</p>

@@ -29,125 +29,124 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Left branded panel */}
-      <div className="relative hidden w-1/2 overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-violet-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
+    <div className="flex h-screen w-screen overflow-hidden bg-[color:var(--bg)]">
+      {/* Left brand panel */}
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-[color:var(--border)] p-12 lg:flex">
         <div
-          className="pointer-events-none absolute inset-0 opacity-20"
+          className="pointer-events-none absolute inset-0 opacity-60"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 75% 15%, rgba(251,191,36,0.4) 0%, transparent 40%), radial-gradient(circle at 15% 80%, rgba(129,140,248,0.5) 0%, transparent 45%)',
+              'radial-gradient(circle at 80% 15%, rgba(109,94,242,0.25) 0%, transparent 40%), radial-gradient(circle at 15% 85%, rgba(227,179,65,0.15) 0%, transparent 45%)',
           }}
         />
 
         <div className="relative flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-            <Building2 className="h-5 w-5 text-amber-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand)]">
+            <Building2 className="h-5 w-5 text-white" />
           </div>
-          <span className="text-lg font-semibold text-white">Property Manager</span>
+          <span className="font-['Fraunces'] text-lg font-semibold text-[color:var(--ink)]">Property Manager</span>
         </div>
 
         <div className="relative">
-          <h1 className="max-w-md text-4xl font-semibold leading-tight text-white">
+          <h1 className="max-w-md font-['Fraunces'] text-[40px] font-semibold leading-[1.15] text-[color:var(--ink)]">
             Built for the way property teams actually work.
           </h1>
-          <p className="mt-4 max-w-sm text-indigo-200">
+          <p className="mt-3 max-w-sm text-[15px] text-[color:var(--ink-soft)]">
             Whether you manage the portfolio or fix what's broken, everything you need is in one place.
           </p>
 
-          <div className="mt-10 space-y-3">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/20">
-                  <Users className="h-4 w-4 text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">For property managers</p>
-                  <p className="text-xs text-indigo-300">Full portfolio visibility and control</p>
-                </div>
+          <div className="mt-8 space-y-2.5">
+            <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3.5 py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--gold-tint)]">
+                <Users className="h-4 w-4 text-[color:var(--gold)]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[color:var(--ink)]">For property managers</p>
+                <p className="text-xs text-[color:var(--ink-faint)]">Full portfolio visibility and control</p>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/20">
-                  <ClipboardCheck className="h-4 w-4 text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">For contractors</p>
-                  <p className="text-xs text-indigo-300">Only the jobs assigned to you, nothing else</p>
-                </div>
+            <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3.5 py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color:var(--gold-tint)]">
+                <ClipboardCheck className="h-4 w-4 text-[color:var(--gold)]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[color:var(--ink)]">For contractors</p>
+                <p className="text-xs text-[color:var(--ink-faint)]">Only the jobs assigned to you, nothing else</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="relative flex items-center gap-2 text-xs text-indigo-300">
+        <p className="relative flex items-center gap-2 text-xs text-[color:var(--ink-faint)]">
           <Wallet className="h-4 w-4" />
           Free to get started, no credit card required
-        </div>
+        </p>
       </div>
 
       {/* Right form panel */}
-      <div className="flex w-full items-center justify-center px-6 py-10 lg:w-1/2">
-        <div className="w-full max-w-sm">
-          <div className="mb-6 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-950">
-              <Building2 className="h-5 w-5 text-amber-400" />
+      <div className="flex w-full items-center justify-center overflow-y-auto px-6 lg:w-1/2">
+        <div className="w-full max-w-sm py-8">
+          <div className="mb-5 flex items-center gap-2.5 lg:hidden">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand)]">
+              <Building2 className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-semibold text-slate-900">Property Manager</span>
+            <span className="font-['Fraunces'] text-lg font-semibold text-[color:var(--ink)]">
+              Property Manager
+            </span>
           </div>
 
-          <h2 className="text-2xl font-semibold text-slate-900">Create your account</h2>
-          <p className="mt-1 mb-6 text-sm text-slate-500">Start managing your properties today</p>
+          <h2 className="font-['Fraunces'] text-[26px] font-semibold text-[color:var(--ink)]">Create your account</h2>
+          <p className="mt-1 mb-5 text-sm text-[color:var(--ink-soft)]">Start managing your properties today</p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Full name</label>
+              <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">Full name</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3.5 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
                 placeholder="Jane Doe"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
+              <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3.5 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
+              <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">Password</label>
               <input
                 type="password"
                 required
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3.5 py-2.5 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
                 placeholder="At least 6 characters"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">I am a</label>
+              <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]">I am a</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setRole('manager')}
-                  className={`rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition ${
+                  aria-pressed={role === 'manager'}
+                  className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
                     role === 'manager'
-                      ? 'border-indigo-950 bg-indigo-950 text-white'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      ? 'border-[color:var(--brand)] bg-[color:var(--brand)] text-white'
+                      : 'border-[color:var(--border)] bg-[color:var(--surface-2)] text-[color:var(--ink-soft)] hover:border-[color:var(--ink-faint)]'
                   }`}
                 >
                   Property Manager
@@ -155,10 +154,11 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={() => setRole('contractor')}
-                  className={`rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition ${
+                  aria-pressed={role === 'contractor'}
+                  className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
                     role === 'contractor'
-                      ? 'border-indigo-950 bg-indigo-950 text-white'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      ? 'border-[color:var(--brand)] bg-[color:var(--brand)] text-white'
+                      : 'border-[color:var(--border)] bg-[color:var(--surface-2)] text-[color:var(--ink-soft)] hover:border-[color:var(--ink-faint)]'
                   }`}
                 >
                   Contractor
@@ -167,22 +167,24 @@ export default function Signup() {
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</div>
+              <div className="rounded-lg bg-[color:var(--red-tint)] px-3.5 py-2.5 text-sm text-[color:var(--red)]">
+                {error}
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group flex w-full items-center justify-center gap-2 rounded-lg bg-[color:var(--brand)] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[color:var(--brand-dark)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Creating account...' : 'Create account'}
               {!loading && <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-5 text-center text-sm text-[color:var(--ink-soft)]">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-indigo-700 hover:underline">
+            <Link to="/login" className="font-medium text-[color:var(--brand)] hover:text-[color:var(--brand-dark)]">
               Sign in
             </Link>
           </p>
