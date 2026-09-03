@@ -111,3 +111,42 @@ Tested end to end: created a request, watched timeline log creation (null -> Rep
 - Rent alerts (grace period + dismiss/reappear logic)
 - React frontend
 - Deployment (Render + Vercel)
+
+---
+
+## Session 6 - React Frontend (all 6 pages)
+
+Built the whole frontend: Vite + React + Tailwind v4 (the newer plugin-based setup, not the old PostCSS config way - v4 removed the CLI init workflow).
+
+Auth: AuthContext holds user state, login/signup/logout, backed by localStorage so a refresh doesn't log you out. axios client has an interceptor that auto-attaches the JWT to every request and auto-logs-out on a 401.
+
+Pages built: Login, Signup, Units (table + create/edit modal + archive), Requests (list with filters + detail modal showing status buttons that only show VALID next states pulled from the same lifecycle rules as the backend + timeline + contractor assignment UI), Payments (bulk entry rows + CSV export via authenticated blob download, not a raw link with the token in the URL), Dashboard (stat cards + recharts donut/bar charts), Alerts (generate/dismiss).
+
+Design choice: no emoji/stickers anywhere in the actual UI, neutral slate palette, one dark accent color, lucide-react icons only where functionally useful - deliberately avoided the "generic AI-generated app" look.
+
+Two real mistakes made and caught here:
+1. Terminal heredoc pastes (cat > file << EOF) kept silently truncating mid-paste in Git Bash on Windows - caused broken/incomplete files multiple times without obvious errors. Fix: switched to creating/editing anything more than a few lines directly in VS Code instead of the terminal.
+2. Created Layout.jsx at the project root instead of inside frontend/src/components/ because a cd command ran from the wrong directory. Caught via git status showing the file in an unexpected location before committing - fixed with a move (git tracked it correctly as a rename), not a delete+recreate.
+
+## Session 7 - Deployment + final gap review
+
+Backend: added gunicorn + Procfile (Flask's dev server explicitly isn't for production). Deployed to Render, root directory set to backend/, env vars for DATABASE_URL/SECRET_KEY/JWT_SECRET_KEY/PYTHON_VERSION. Discovered SECRET_KEY and JWT_SECRET_KEY had never actually been generated locally the whole project - only DATABASE_URL existed in .env, meaning the app had silently been running on insecure hardcoded fallback defaults from config.py this whole time. Generated real ones for both local and Render.
+
+Frontend: deployed to Vercel, root directory frontend/, VITE_API_URL env var pointing at the live Render URL.
+
+Set up an external cron (cron-job.org) pinging /api/health every 10 min so Render's free tier doesn't cold-start on a reviewer's first click.
+
+Most important part of this session: went back and reread the ORIGINAL brief's exact wording (not my own paraphrased understanding of the 10 goals) and diffed it against what was actually built. Found 4 real gaps that had been missed:
+1. No way to edit a request's description/priority after creation (goal 3 explicitly requires this for both roles)
+2. Requests search was missing a contractor filter (goal 6 lists it explicitly)
+3. Timeline only logged status changes, not assignment/removal events (goal 9 requires both)
+4. Dashboard was missing total rent collected, by-contractor breakdown, and the 8-week resolved chart (goal 8 requires all three)
+
+All 4 fixed. The lesson here: early in a long build you form a mental summary of the spec and start coding against that summary, and the summary quietly drifts from the literal ask. A final read-the-actual-text-again pass caught things a "I basically know what this needs" pass would not have.
+
+One more bug hit while fixing gap 3: added a new NOT NULL column to a table that already had rows, migration failed with NotNullViolation. Fixed with the standard safe pattern - add column as nullable, backfill existing rows via UPDATE, then alter to NOT NULL.
+
+Seeded the live database with more realistic demo data afterward (5 units, requests across different statuses/priorities, one deliberately underpaid rent record) so the live app doesn't look like an empty shell to a reviewer.
+
+## Final state
+All 10 goals done and verified against literal brief wording. Backend + frontend live and tested end to end. All 5 required docs plus SUBMISSION.md and README.md complete. Remaining: final UI polish pass (optional, app is functionally complete either way) and one last full click-through before calling it submitted.
