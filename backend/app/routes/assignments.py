@@ -23,6 +23,8 @@ def assign_contractor():
     req = MaintenanceRequest.query.get(request_id)
     if not req:
         return jsonify({'error': 'Maintenance request not found'}), 404
+    if req.unit.manager_id != get_current_user_id():
+        return jsonify({'error': 'Maintenance request not found'}), 404
 
     contractor = User.query.get(contractor_id)
     if not contractor or contractor.role != 'contractor':
@@ -52,6 +54,8 @@ def assign_contractor():
 def remove_assignment(assignment_id):
     assignment = Assignment.query.get(assignment_id)
     if not assignment:
+        return jsonify({'error': 'Assignment not found'}), 404
+    if assignment.request.unit.manager_id != get_current_user_id():
         return jsonify({'error': 'Assignment not found'}), 404
 
     contractor_name = assignment.contractor.name if assignment.contractor else 'contractor'
@@ -85,6 +89,8 @@ def list_assignments_for_request(request_id):
     if not req:
         return jsonify({'error': 'Maintenance request not found'}), 404
 
+    if get_current_user_role() == 'manager' and req.unit.manager_id != get_current_user_id():
+        return jsonify({'error': 'Maintenance request not found'}), 404
     if get_current_user_role() == 'contractor':
         user_id = get_current_user_id()
         is_assigned = Assignment.query.filter_by(

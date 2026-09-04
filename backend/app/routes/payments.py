@@ -61,7 +61,7 @@ def bulk_record_payments():
             continue
 
         unit = Unit.query.get(unit_id)
-        if not unit:
+        if not unit or unit.manager_id != user_id:
             results['unmatched'].append({
                 'unit_id': unit_id,
                 'reason': 'Unit not found'
@@ -128,7 +128,7 @@ def bulk_record_payments():
 @payments_bp.route('', methods=['GET'])
 @role_required('manager')
 def list_payments():
-    query = Payment.query
+    query = Payment.query.join(Unit).filter(Unit.manager_id == get_current_user_id())
 
     month_filter = request.args.get('month')
     if month_filter:
@@ -155,11 +155,15 @@ def export_csv():
 
     month_filter = request.args.get('month') or datetime.now(timezone.utc).strftime('%Y-%m')
 
-    units = Unit.query.filter_by(is_archived=False).order_by(Unit.unit_number.asc()).all()
+    manager_id = get_current_user_id()
+    units = Unit.query.filter_by(manager_id=manager_id, is_archived=False).order_by(Unit.unit_number.asc()).all()
 
     payments_by_unit = {
         p.unit_id: p
-        for p in Payment.query.filter(Payment.month_covered == month_filter).all()
+        for p in Payment.query.join(Unit).filter(
+            Payment.month_covered == month_filter,
+            Unit.manager_id == manager_id,
+        ).all()
     }
 
     output = io.StringIO()

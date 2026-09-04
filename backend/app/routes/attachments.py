@@ -20,6 +20,10 @@ ALLOWED_CONTENT_TYPES = [
 
 def _assert_can_access_request(req):
     """Contractors may access attachments only on requests assigned to them."""
+    if get_current_user_role() == 'manager':
+        if req.unit.manager_id != get_current_user_id():
+            return jsonify({'error': 'Maintenance request not found'}), 404
+        return None
     if get_current_user_role() != 'contractor':
         return None
 

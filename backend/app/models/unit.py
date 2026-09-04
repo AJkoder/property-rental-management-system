@@ -6,6 +6,7 @@ class Unit(db.Model):
     __tablename__ = 'units'
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    manager_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
     unit_number = db.Column(db.String(50), nullable=False)
     address = db.Column(db.String(255), nullable=False)
     rent_amount = db.Column(db.Numeric(10, 2), nullable=False)
@@ -13,6 +14,8 @@ class Unit(db.Model):
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    manager = db.relationship('User', backref='managed_units')
 
     def to_dict(self):
         return {

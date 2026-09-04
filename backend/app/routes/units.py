@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models import Unit
-from app.utils.auth_helpers import role_required
+from app.utils.auth_helpers import role_required, get_current_user_id, get_current_user_role
 from flask_jwt_extended import jwt_required
 
 units_bp = Blueprint('units', __name__)
@@ -15,7 +15,10 @@ def list_request_options():
     This keeps rent and tenant details manager-only while allowing a contractor
     to select the affected unit when creating a request.
     """
-    units = Unit.query.filter_by(is_archived=False).order_by(Unit.unit_number.asc()).all()
+    query = Unit.query.filter_by(is_archived=False)
+    if get_current_user_role() == 'manager':
+        query = query.filter_by(manager_id=get_current_user_id())
+    units = query.order_by(Unit.unit_number.asc()).all()
     return jsonify({
         'units': [
             {
@@ -58,6 +61,7 @@ def create_unit():
         return jsonify({'error': 'rent_amount must be a positive number'}), 400
 
     unit = Unit(
+        manager_id=get_current_user_id(),
         unit_number=unit_number,
         address=address,
         rent_amount=rent_amount,
@@ -74,7 +78,7 @@ def create_unit():
 def list_units():
     include_archived = request.args.get('include_archived', 'false').lower() == 'true'
 
-    query = Unit.query
+    query = Unit.query.filter_by(manager_id=get_current_user_id())
     if not include_archived:
         query = query.filter_by(is_archived=False)
 
@@ -86,7 +90,7 @@ def list_units():
 @role_required('manager')
 def get_unit(unit_id):
     unit = Unit.query.get(unit_id)
-    if not unit:
+    if not unit or unit.manager_id != get_current_user_id():
         return jsonify({'error': 'Unit not found'}), 404
     return jsonify({'unit': unit.to_dict()}), 200
 
@@ -95,7 +99,7 @@ def get_unit(unit_id):
 @role_required('manager')
 def update_unit(unit_id):
     unit = Unit.query.get(unit_id)
-    if not unit:
+    if not unit or unit.manager_id != get_current_user_id():
         return jsonify({'error': 'Unit not found'}), 404
 
     data = request.get_json()
@@ -132,7 +136,7 @@ def update_unit(unit_id):
 @role_required('manager')
 def archive_unit(unit_id):
     unit = Unit.query.get(unit_id)
-    if not unit:
+    if not unit or unit.manager_id != get_current_user_id():
         return jsonify({'error': 'Unit not found'}), 404
 
     unit.is_archived = True
@@ -144,7 +148,7 @@ def archive_unit(unit_id):
 @role_required('manager')
 def restore_unit(unit_id):
     unit = Unit.query.get(unit_id)
-    if not unit:
+    if not unit or unit.manager_id != get_current_user_id():
         return jsonify({'error': 'Unit not found'}), 404
 
     unit.is_archived = False

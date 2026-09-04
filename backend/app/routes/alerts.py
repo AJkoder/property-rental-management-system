@@ -27,7 +27,8 @@ def generate_alerts():
             'created': []
         }), 200
 
-    active_units = Unit.query.filter_by(is_archived=False).all()
+    manager_id = get_current_user_id()
+    active_units = Unit.query.filter_by(manager_id=manager_id, is_archived=False).all()
     created_alerts = []
 
     for unit in active_units:
@@ -67,7 +68,7 @@ def generate_alerts():
 def list_alerts():
     show_dismissed = request.args.get('include_dismissed', 'false').lower() == 'true'
 
-    query = Alert.query
+    query = Alert.query.join(Unit).filter(Unit.manager_id == get_current_user_id())
     if not show_dismissed:
         query = query.filter_by(is_dismissed=False)
 
@@ -79,7 +80,7 @@ def list_alerts():
 @role_required('manager')
 def dismiss_alert(alert_id):
     alert = Alert.query.get(alert_id)
-    if not alert:
+    if not alert or alert.unit.manager_id != get_current_user_id():
         return jsonify({'error': 'Alert not found'}), 404
 
     if alert.is_dismissed:

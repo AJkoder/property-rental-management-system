@@ -17,7 +17,9 @@ def _assert_contractor_assigned(req):
     the caller is allowed to proceed (managers always pass; contractors only
     pass if assigned)."""
     role = get_current_user_role()
-    if role != 'contractor':
+    if role == 'manager':
+        if req.unit.manager_id != get_current_user_id():
+            return jsonify({'error': 'Request not found'}), 404
         return None
     user_id = get_current_user_id()
     is_assigned = Assignment.query.filter_by(request_id=req.id, contractor_id=user_id).first() is not None
@@ -47,6 +49,9 @@ def create_request():
 
     unit = Unit.query.get(unit_id)
     if not unit or unit.is_archived:
+        return jsonify({'error': 'Unit not found'}), 404
+
+    if get_current_user_role() == 'manager' and unit.manager_id != get_current_user_id():
         return jsonify({'error': 'Unit not found'}), 404
 
     user_id = get_current_user_id()
@@ -84,7 +89,9 @@ def list_requests():
     # Use EXISTS rather than joining the assignments table. This keeps one row per
     # request and makes the contractor visibility rule apply before any optional
     # contractor filter is added below.
-    if role == 'contractor':
+    if role == 'manager':
+        query = query.join(Unit).filter(Unit.manager_id == user_id)
+    elif role == 'contractor':
         query = query.filter(
             MaintenanceRequest.assignments.any(Assignment.contractor_id == user_id)
         )
@@ -174,6 +181,10 @@ def update_request(request_id):
     if get_current_user_role() != 'manager':
         return jsonify({'error': 'You do not have permission to perform this action'}), 403
 
+    denied = _assert_contractor_assigned(req)
+    if denied:
+        return denied
+
     data = request.get_json()
     if not isinstance(data, dict):
         return jsonify({'error': 'No input data provided'}), 400
@@ -204,6 +215,10 @@ def update_status(request_id):
 
     if get_current_user_role() != 'manager':
         return jsonify({'error': 'You do not have permission to perform this action'}), 403
+
+    denied = _assert_contractor_assigned(req)
+    if denied:
+        return denied
 
     data = request.get_json()
     new_status = data.get('status') if isinstance(data, dict) else None
