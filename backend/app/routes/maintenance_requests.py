@@ -30,21 +30,23 @@ def _assert_contractor_assigned(req):
 @jwt_required()
 def create_request():
     data = request.get_json()
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({'error': 'No input data provided'}), 400
 
     unit_id = data.get('unit_id')
-    description = data.get('description', '').strip()
+    description = data.get('description', '')
     priority = data.get('priority', 'Medium')
 
-    if not unit_id or not description:
+    if not unit_id or not isinstance(description, str) or not description.strip():
         return jsonify({'error': 'unit_id and description are required'}), 400
+
+    description = description.strip()
 
     if priority not in VALID_PRIORITIES:
         return jsonify({'error': f'priority must be one of {VALID_PRIORITIES}'}), 400
 
     unit = Unit.query.get(unit_id)
-    if not unit:
+    if not unit or unit.is_archived:
         return jsonify({'error': 'Unit not found'}), 404
 
     user_id = get_current_user_id()
@@ -120,6 +122,8 @@ def list_requests():
         return jsonify({'error': f'sort_by must be one of {VALID_SORT_FIELDS}'}), 400
 
     sort_order = request.args.get('sort_order', 'desc')
+    if sort_order not in ('asc', 'desc'):
+        return jsonify({'error': 'sort_order must be asc or desc'}), 400
     sort_column = getattr(MaintenanceRequest, sort_by)
     if sort_order == 'asc':
         query = query.order_by(sort_column.asc())
@@ -167,15 +171,16 @@ def update_request(request_id):
     if not req:
         return jsonify({'error': 'Request not found'}), 404
 
-    denied = _assert_contractor_assigned(req)
-    if denied:
-        return denied
+    if get_current_user_role() != 'manager':
+        return jsonify({'error': 'You do not have permission to perform this action'}), 403
 
     data = request.get_json()
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({'error': 'No input data provided'}), 400
 
     if 'description' in data:
+        if not isinstance(data['description'], str):
+            return jsonify({'error': 'description must be a string'}), 400
         description = data['description'].strip()
         if not description:
             return jsonify({'error': 'description cannot be empty'}), 400
@@ -197,12 +202,11 @@ def update_status(request_id):
     if not req:
         return jsonify({'error': 'Request not found'}), 404
 
-    denied = _assert_contractor_assigned(req)
-    if denied:
-        return denied
+    if get_current_user_role() != 'manager':
+        return jsonify({'error': 'You do not have permission to perform this action'}), 403
 
     data = request.get_json()
-    new_status = data.get('status') if data else None
+    new_status = data.get('status') if isinstance(data, dict) else None
 
     if not new_status:
         return jsonify({'error': 'status is required'}), 400

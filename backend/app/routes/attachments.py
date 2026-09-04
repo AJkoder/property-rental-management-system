@@ -46,12 +46,18 @@ def upload_attachment(request_id):
 
     data = request.get_json()
 
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({'error': 'No input data provided'}), 400
 
-    file_name = data.get('file_name', '').strip()
-    content_type = data.get('content_type', '').strip()
+    file_name = data.get('file_name', '')
+    content_type = data.get('content_type', '')
     file_data = data.get('file_data', '')
+
+    if not isinstance(file_name, str) or not isinstance(content_type, str) or not isinstance(file_data, str):
+        return jsonify({'error': 'file_name, content_type, and file_data must be strings'}), 400
+
+    file_name = file_name.strip()
+    content_type = content_type.strip()
 
     if not file_name or not content_type or not file_data:
         return jsonify({'error': 'file_name, content_type, and file_data are required'}), 400
@@ -61,7 +67,7 @@ def upload_attachment(request_id):
 
     try:
         encoded_data = file_data.split(',')[-1]
-        decoded_data = base64.b64decode(encoded_data)
+        decoded_data = base64.b64decode(encoded_data, validate=True)
         decoded_size = len(decoded_data)
     except Exception:
         return jsonify({'error': 'file_data must be valid base64'}), 400

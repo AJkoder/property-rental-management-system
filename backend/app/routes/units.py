@@ -33,13 +33,18 @@ def list_request_options():
 def create_unit():
     data = request.get_json()
 
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({'error': 'No input data provided'}), 400
 
-    unit_number = data.get('unit_number', '').strip()
-    address = data.get('address', '').strip()
+    unit_number = data.get('unit_number', '')
+    address = data.get('address', '')
     rent_amount = data.get('rent_amount')
     tenant_name = data.get('tenant_name')
+    if not isinstance(unit_number, str) or not isinstance(address, str) or (tenant_name is not None and not isinstance(tenant_name, str)):
+        return jsonify({'error': 'unit_number, address, and tenant_name must be strings'}), 400
+
+    unit_number = unit_number.strip()
+    address = address.strip()
     tenant_name = tenant_name.strip() if tenant_name else None
 
     if not unit_number or not address or rent_amount is None:
@@ -94,15 +99,21 @@ def update_unit(unit_id):
         return jsonify({'error': 'Unit not found'}), 404
 
     data = request.get_json()
-    if not data:
+    if not isinstance(data, dict):
         return jsonify({'error': 'No input data provided'}), 400
 
     if 'unit_number' in data:
+        if not isinstance(data['unit_number'], str) or not data['unit_number'].strip():
+            return jsonify({'error': 'unit_number must be a non-empty string'}), 400
         unit.unit_number = data['unit_number'].strip()
     if 'address' in data:
+        if not isinstance(data['address'], str) or not data['address'].strip():
+            return jsonify({'error': 'address must be a non-empty string'}), 400
         unit.address = data['address'].strip()
     if 'tenant_name' in data:
         tenant_name = data['tenant_name']
+        if tenant_name is not None and not isinstance(tenant_name, str):
+            return jsonify({'error': 'tenant_name must be a string or null'}), 400
         unit.tenant_name = tenant_name.strip() if tenant_name else None
     if 'rent_amount' in data:
         try:

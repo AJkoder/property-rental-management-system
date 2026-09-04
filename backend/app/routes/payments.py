@@ -4,6 +4,8 @@ from app.models import Payment, Unit
 from app.utils.auth_helpers import role_required, get_current_user_id
 import csv
 import io
+import math
+from datetime import datetime
 
 payments_bp = Blueprint('payments', __name__)
 
@@ -17,11 +19,20 @@ def classify_payment(amount_paid, expected_amount):
         return 'overpaid'
 
 
+def is_valid_month(value):
+    if not isinstance(value, str):
+        return False
+    try:
+        return datetime.strptime(value, '%Y-%m').strftime('%Y-%m') == value
+    except ValueError:
+        return False
+
+
 @payments_bp.route('/bulk', methods=['POST'])
 @role_required('manager')
 def bulk_record_payments():
     data = request.get_json()
-    if not data or 'payments' not in data:
+    if not isinstance(data, dict) or 'payments' not in data:
         return jsonify({'error': 'Request body must contain a "payments" array'}), 400
 
     entries = data['payments']
@@ -31,8 +42,13 @@ def bulk_record_payments():
     user_id = get_current_user_id()
     results = {'matched': [], 'underpaid': [], 'overpaid': [], 'unmatched': []}
     created_payments = []
+    submitted_keys = set()
 
     for entry in entries:
+        if not isinstance(entry, dict):
+            results['unmatched'].append({'unit_id': None, 'reason': 'Each payment must be an object'})
+            continue
+
         unit_id = entry.get('unit_id')
         amount_paid = entry.get('amount_paid')
         month_covered = entry.get('month_covered')
@@ -52,12 +68,29 @@ def bulk_record_payments():
             })
             continue
 
+        if not is_valid_month(month_covered):
+            results['unmatched'].append({
+                'unit_id': unit_id,
+                'reason': 'month_covered must use YYYY-MM format'
+            })
+            continue
+
+        payment_key = (unit_id, month_covered)
+        if payment_key in submitted_keys or Payment.query.filter_by(unit_id=unit_id, month_covered=month_covered).first():
+            results['unmatched'].append({
+                'unit_id': unit_id,
+                'reason': 'A payment for this unit and month already exists'
+            })
+            continue
+
         try:
             amount_paid = float(amount_paid)
+            if not math.isfinite(amount_paid) or amount_paid < 0:
+                raise ValueError
         except (TypeError, ValueError):
             results['unmatched'].append({
                 'unit_id': unit_id,
-                'reason': 'amount_paid must be a number'
+                'reason': 'amount_paid must be a non-negative number'
             })
             continue
 
@@ -74,6 +107,7 @@ def bulk_record_payments():
         )
         db.session.add(payment)
         created_payments.append((status, payment))
+        submitted_keys.add(payment_key)
 
     db.session.flush()  # assigns IDs and makes relationships available
 
