@@ -70,7 +70,7 @@ def list_alerts():
 
     query = Alert.query.join(Unit).filter(Unit.manager_id == get_current_user_id())
     if not show_dismissed:
-        query = query.filter_by(is_dismissed=False)
+        query = query.filter(Alert.is_dismissed.is_(False))
 
     alerts = query.order_by(Alert.created_at.desc()).all()
     return jsonify({'alerts': [a.to_dict() for a in alerts]}), 200
