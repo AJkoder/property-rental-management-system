@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify
 from app.extensions import db
 from app.models import Unit, MaintenanceRequest, Payment, Assignment, User
 from app.utils.auth_helpers import role_required
+from app.routes.alerts import GRACE_PERIOD_DAYS
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import func
 
@@ -77,11 +78,15 @@ def dashboard_summary():
         Payment.match_status == 'underpaid'
     ).count()
 
-    paid_unit_ids_this_month = {
-        p.unit_id for p in Payment.query.filter(Payment.month_covered == current_month).all()
-    }
-    all_active_unit_ids = {u.id for u in Unit.query.filter_by(is_archived=False).all()}
-    units_overdue_this_month = len(all_active_unit_ids - paid_unit_ids_this_month) + underpaid_this_month
+    now = datetime.now(timezone.utc)
+    if now.day <= GRACE_PERIOD_DAYS:
+        units_overdue_this_month = underpaid_this_month
+    else:
+        paid_unit_ids_this_month = {
+            p.unit_id for p in Payment.query.filter(Payment.month_covered == current_month).all()
+        }
+        all_active_unit_ids = {u.id for u in Unit.query.filter_by(is_archived=False).all()}
+        units_overdue_this_month = len(all_active_unit_ids - paid_unit_ids_this_month) + underpaid_this_month
 
     return jsonify({
         'units': {

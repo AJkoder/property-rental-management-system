@@ -11,6 +11,21 @@ VALID_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent']
 VALID_SORT_FIELDS = ['created_at', 'updated_at', 'priority', 'status']
 
 
+def _assert_contractor_assigned(req):
+    """Returns a (response, status) tuple to short-circuit with if the current
+    user is a contractor who isn't assigned to this request. Returns None if
+    the caller is allowed to proceed (managers always pass; contractors only
+    pass if assigned)."""
+    role = get_current_user_role()
+    if role != 'contractor':
+        return None
+    user_id = get_current_user_id()
+    is_assigned = Assignment.query.filter_by(request_id=req.id, contractor_id=user_id).first() is not None
+    if not is_assigned:
+        return jsonify({'error': 'You are not assigned to this request'}), 403
+    return None
+
+
 @requests_bp.route('', methods=['POST'])
 @jwt_required()
 def create_request():
@@ -128,6 +143,11 @@ def get_request(request_id):
     req = MaintenanceRequest.query.get(request_id)
     if not req:
         return jsonify({'error': 'Request not found'}), 404
+
+    denied = _assert_contractor_assigned(req)
+    if denied:
+        return denied
+
     return jsonify({'request': req.to_dict()}), 200
 
 
@@ -137,6 +157,10 @@ def update_request(request_id):
     req = MaintenanceRequest.query.get(request_id)
     if not req:
         return jsonify({'error': 'Request not found'}), 404
+
+    denied = _assert_contractor_assigned(req)
+    if denied:
+        return denied
 
     data = request.get_json()
     if not data:
@@ -163,6 +187,10 @@ def update_status(request_id):
     req = MaintenanceRequest.query.get(request_id)
     if not req:
         return jsonify({'error': 'Request not found'}), 404
+
+    denied = _assert_contractor_assigned(req)
+    if denied:
+        return denied
 
     data = request.get_json()
     new_status = data.get('status') if data else None
@@ -203,6 +231,10 @@ def get_timeline(request_id):
     req = MaintenanceRequest.query.get(request_id)
     if not req:
         return jsonify({'error': 'Request not found'}), 404
+
+    denied = _assert_contractor_assigned(req)
+    if denied:
+        return denied
 
     history = StatusHistory.query.filter_by(request_id=request_id).order_by(StatusHistory.changed_at.asc()).all()
     return jsonify({'timeline': [h.to_dict() for h in history]}), 200

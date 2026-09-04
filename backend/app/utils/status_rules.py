@@ -5,7 +5,7 @@ VALID_STATUSES = ['Reported', 'Triaged', 'Scheduled', 'Resolved']
 # Maps current status -> list of statuses it's allowed to move to
 ALLOWED_TRANSITIONS = {
     'Reported': ['Triaged'],
-    'Triaged': ['Scheduled', 'Reported'],
+    'Triaged': ['Scheduled'],
     'Scheduled': ['Resolved', 'Triaged'],
     'Resolved': ['Triaged'],  # reopening goes to Triaged, NOT back to Reported
 }

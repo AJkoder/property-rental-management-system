@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models import Unit
 from app.utils.auth_helpers import role_required
-from flask_jwt_extended import jwt_required
 
 units_bp = Blueprint('units', __name__)
 
@@ -18,7 +17,8 @@ def create_unit():
     unit_number = data.get('unit_number', '').strip()
     address = data.get('address', '').strip()
     rent_amount = data.get('rent_amount')
-    tenant_name = data.get('tenant_name', '').strip() or None
+    tenant_name = data.get('tenant_name')
+    tenant_name = tenant_name.strip() if tenant_name else None
 
     if not unit_number or not address or rent_amount is None:
         return jsonify({'error': 'unit_number, address, and rent_amount are required'}), 400
@@ -43,7 +43,7 @@ def create_unit():
 
 
 @units_bp.route('', methods=['GET'])
-@jwt_required()
+@role_required('manager')
 def list_units():
     include_archived = request.args.get('include_archived', 'false').lower() == 'true'
 
@@ -56,7 +56,7 @@ def list_units():
 
 
 @units_bp.route('/<unit_id>', methods=['GET'])
-@jwt_required()
+@role_required('manager')
 def get_unit(unit_id):
     unit = Unit.query.get(unit_id)
     if not unit:
@@ -80,7 +80,8 @@ def update_unit(unit_id):
     if 'address' in data:
         unit.address = data['address'].strip()
     if 'tenant_name' in data:
-        unit.tenant_name = data['tenant_name'].strip() or None
+        tenant_name = data['tenant_name']
+        unit.tenant_name = tenant_name.strip() if tenant_name else None
     if 'rent_amount' in data:
         try:
             rent = float(data['rent_amount'])

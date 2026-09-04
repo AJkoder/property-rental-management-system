@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify, Response
 from app.extensions import db
 from app.models import Payment, Unit
 from app.utils.auth_helpers import role_required, get_current_user_id
-from flask_jwt_extended import jwt_required
 import csv
 import io
 
@@ -93,7 +92,7 @@ def bulk_record_payments():
 
 
 @payments_bp.route('', methods=['GET'])
-@jwt_required()
+@role_required('manager')
 def list_payments():
     query = Payment.query
 
@@ -112,26 +111,43 @@ def list_payments():
 @payments_bp.route('/export', methods=['GET'])
 @role_required('manager')
 def export_csv():
-    month_filter = request.args.get('month')
+    """
+    Exports the current rent roll: one row per active unit, showing its
+    tenant, monthly rent, and this month's payment status (or 'unpaid' if
+    no payment has been recorded yet). Optionally filtered by month
+    (defaults to the current month if not provided).
+    """
+    from datetime import datetime, timezone
 
-    query = Payment.query
-    if month_filter:
-        query = query.filter(Payment.month_covered == month_filter)
+    month_filter = request.args.get('month') or datetime.now(timezone.utc).strftime('%Y-%m')
 
-    payments = query.order_by(Payment.recorded_at.desc()).all()
+    units = Unit.query.filter_by(is_archived=False).order_by(Unit.unit_number.asc()).all()
+
+    payments_by_unit = {
+        p.unit_id: p
+        for p in Payment.query.filter(Payment.month_covered == month_filter).all()
+    }
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Unit Number', 'Month', 'Expected Amount', 'Amount Paid', 'Status', 'Recorded At'])
+    writer.writerow(['Unit Number', 'Tenant', 'Month', 'Monthly Rent', 'Amount Paid', 'Status'])
 
-    for p in payments:
+    for unit in units:
+        payment = payments_by_unit.get(unit.id)
+        if payment:
+            amount_paid = float(payment.amount_paid)
+            status = payment.match_status
+        else:
+            amount_paid = 0
+            status = 'unpaid'
+
         writer.writerow([
-            p.unit.unit_number if p.unit else '',
-            p.month_covered,
-            float(p.expected_amount),
-            float(p.amount_paid),
-            p.match_status,
-            p.recorded_at.isoformat()
+            unit.unit_number,
+            unit.tenant_name or '',
+            month_filter,
+            float(unit.rent_amount),
+            amount_paid,
+            status
         ])
 
     csv_data = output.getvalue()
@@ -140,5 +156,5 @@ def export_csv():
     return Response(
         csv_data,
         mimetype='text/csv',
-        headers={'Content-Disposition': 'attachment; filename=rent_roll.csv'}
+        headers={'Content-Disposition': f'attachment; filename=rent_roll_{month_filter}.csv'}
     )

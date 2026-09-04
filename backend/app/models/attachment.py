@@ -25,4 +25,8 @@ class Attachment(db.Model):
             'uploaded_by_name': self.uploaded_by_user.name if self.uploaded_by_user else None,
             'uploaded_at': self.uploaded_at.isoformat()
         }
-        
+
+        if include_data:
+            result['file_data'] = self.file_data
+
+        return result

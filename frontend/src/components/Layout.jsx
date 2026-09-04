@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getAlerts } from '../api/alerts';
 import {
   Building2,
   LayoutGrid,
@@ -25,9 +26,40 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [alertCount, setAlertCount] = useState(0);
 
   const isManager = user?.role === 'manager';
   const visibleItems = NAV_ITEMS.filter((item) => !item.managerOnly || isManager);
+
+  useEffect(() => {
+    if (!isManager) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadAlertCount = () => {
+      getAlerts()
+        .then((res) => {
+          if (!cancelled) {
+            setAlertCount((res.data.alerts || []).length);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setAlertCount(0);
+          }
+        });
+    };
+
+    loadAlertCount();
+    const interval = setInterval(loadAlertCount, 60000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isManager]);
 
   const handleLogout = () => {
     logout();
@@ -51,6 +83,7 @@ export default function Layout({ children }) {
           user={user}
           initials={initials}
           onLogout={handleLogout}
+          alertCount={alertCount}
         />
       </aside>
 
@@ -75,6 +108,7 @@ export default function Layout({ children }) {
               initials={initials}
               onLogout={handleLogout}
               onNavigate={() => setMobileNavOpen(false)}
+              alertCount={alertCount}
             />
           </aside>
         </div>
@@ -114,7 +148,7 @@ export default function Layout({ children }) {
   );
 }
 
-function SidebarContent({ visibleItems, user, initials, onLogout, onNavigate }) {
+function SidebarContent({ visibleItems, user, initials, onLogout, onNavigate, alertCount }) {
   return (
     <>
       {/* Logo */}
@@ -143,7 +177,12 @@ function SidebarContent({ visibleItems, user, initials, onLogout, onNavigate }) 
             }
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {label}
+            <span className="flex-1">{label}</span>
+            {to === '/alerts' && alertCount > 0 && (
+              <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[color:var(--red)] px-1.5 text-[11px] font-semibold text-white">
+                {alertCount > 99 ? '99+' : alertCount}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

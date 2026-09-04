@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models import Assignment, MaintenanceRequest, User, StatusHistory
 from app.utils.auth_helpers import role_required, get_current_user_id
+from flask_jwt_extended import jwt_required
 
 assignments_bp = Blueprint('assignments', __name__)
 
@@ -71,6 +72,7 @@ def remove_assignment(assignment_id):
 
 
 @assignments_bp.route('/request/<request_id>', methods=['GET'])
+@jwt_required()
 def list_assignments_for_request(request_id):
     assignments = Assignment.query.filter_by(request_id=request_id).all()
     return jsonify({'assignments': [a.to_dict() for a in assignments]}), 200

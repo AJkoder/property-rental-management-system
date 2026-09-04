@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getDashboardSummary } from '../api/dashboard';
+import { useAuth } from '../context/AuthContext';
+import { Navigate, useNavigate } from 'react-router-dom';
 import {
   PieChart,
   Pie,
@@ -32,16 +34,23 @@ const STATUS_COLORS = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (user?.role !== 'manager') {
+      setLoading(false);
+      return;
+    }
+
     getDashboardSummary()
       .then((res) => setData(res.data))
       .catch(() => setError('Failed to load dashboard.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
@@ -52,6 +61,10 @@ export default function Dashboard() {
         </div>
       </div>
     );
+  }
+
+  if (user?.role !== 'manager') {
+    return <Navigate to="/requests" replace />;
   }
 
   if (error || !data) {
@@ -275,6 +288,7 @@ export default function Dashboard() {
               value={overdueCount}
               tone={overdueCount > 0 ? 'red' : 'green'}
               action={overdueCount > 0 ? 'Review payments' : 'All clear'}
+              onClick={overdueCount > 0 ? () => navigate('/payments') : undefined}
             />
 
             <AttentionRow
@@ -290,6 +304,7 @@ export default function Dashboard() {
               value={openRequests}
               tone={openRequests > 0 ? 'gold' : 'green'}
               action={openRequests > 0 ? 'View requests' : 'All clear'}
+              onClick={openRequests > 0 ? () => navigate('/requests') : undefined}
             />
 
             <AttentionRow
@@ -304,7 +319,8 @@ export default function Dashboard() {
               }
               value={urgentCount}
               tone={urgentCount > 0 ? 'red' : 'green'}
-              action={urgentCount > 0 ? 'Prioritize' : 'All clear'}
+              action={urgentCount > 0 ? 'View urgent requests' : 'All clear'}
+              onClick={urgentCount > 0 ? () => navigate('/requests') : undefined}
             />
 
             <AttentionRow
@@ -320,6 +336,7 @@ export default function Dashboard() {
               value={vacantCount}
               tone={vacantCount > 0 ? 'gold' : 'green'}
               action={vacantCount > 0 ? 'View units' : 'Fully occupied'}
+              onClick={vacantCount > 0 ? () => navigate('/units') : undefined}
             />
           </div>
         </div>
@@ -852,6 +869,7 @@ function AttentionRow({
   value,
   tone,
   action,
+  onClick,
 }) {
   const styles = {
     red: {
@@ -897,12 +915,16 @@ function AttentionRow({
         {value}
       </span>
 
-      <span
-        className={`hidden shrink-0 items-center gap-1 text-xs font-semibold sm:flex ${style.action}`}
-      >
-        {action}
-        <ChevronRight className="h-3.5 w-3.5" />
-      </span>
+      {onClick && action ? (
+        <button
+          type="button"
+          onClick={onClick}
+          className={`hidden shrink-0 items-center gap-1 text-xs font-semibold transition hover:opacity-70 sm:flex ${style.action}`}
+        >
+          {action}
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+      ) : null}
     </div>
   );
 }
