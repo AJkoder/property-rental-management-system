@@ -74,7 +74,10 @@ def ensure_documented_demo_data():
     if not manager:
         return
 
-    if not Unit.query.filter_by(manager_id=manager.id).first():
+    # A manager may already have older records from an earlier version of the
+    # demo. Use the first starter unit as the idempotency marker instead of
+    # treating any existing unit as a complete reviewer portfolio.
+    if not Unit.query.filter_by(manager_id=manager.id, unit_number='A-101').first():
         create_manager_demo_data(manager.id)
         db.session.flush()
 
