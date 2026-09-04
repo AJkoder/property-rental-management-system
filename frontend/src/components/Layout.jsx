@@ -131,7 +131,7 @@ export default function Layout({ children }) {
               <Building2 className="h-4 w-4 text-white" />
             </div>
             <span className="font-['Fraunces'] text-base font-semibold text-[color:var(--ink)]">
-              Property Manager
+              Rental Desk
             </span>
           </div>
 
@@ -157,7 +157,7 @@ function SidebarContent({ visibleItems, user, initials, onLogout, onNavigate, al
           <Building2 className="h-4 w-4 text-white" />
         </div>
         <span className="font-['Fraunces'] text-lg font-semibold leading-tight text-[color:var(--ink)]">
-          Property Manager
+          Rental Desk
         </span>
       </div>
 

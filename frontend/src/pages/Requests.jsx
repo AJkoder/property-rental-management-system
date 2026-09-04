@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   getRequests,
   createRequest,
+  updateRequest,
   updateRequestStatus,
   getRequestTimeline,
   addRequestNote,
@@ -12,7 +13,7 @@ import {
   getAssignmentsForRequest,
 } from '../api/requests';
 
-import { getUnits } from '../api/units';
+import { getUnits, getRequestUnitOptions } from '../api/units';
 import { getContractors } from '../api/users';
 
 import {
@@ -32,6 +33,8 @@ import {
   Wrench,
   Image,
   Upload,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 const STATUS_STYLES = {
@@ -78,7 +81,21 @@ export default function Requests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [unitFilter, setUnitFilter] = useState('');
+  const [contractorFilter, setContractorFilter] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    per_page: 10,
+    total: 0,
+    total_pages: 0,
+  });
+  const [units, setUnits] = useState([]);
+  const [contractors, setContractors] = useState([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
 
@@ -87,7 +104,12 @@ export default function Requests() {
     setError('');
 
     try {
-      const params = {};
+      const params = {
+        page,
+        per_page: 10,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      };
 
       if (statusFilter) {
         params.status = statusFilter;
@@ -97,8 +119,21 @@ export default function Requests() {
         params.search = search;
       }
 
+      if (priorityFilter) {
+        params.priority = priorityFilter;
+      }
+
+      if (unitFilter) {
+        params.unit_id = unitFilter;
+      }
+
+      if (contractorFilter) {
+        params.contractor_id = contractorFilter;
+      }
+
       const res = await getRequests(params);
       setRequests(res.data.requests);
+      setPagination(res.data.pagination);
     } catch (err) {
       setError('Failed to load maintenance requests.');
     } finally {
@@ -110,7 +145,23 @@ export default function Requests() {
     const timeout = setTimeout(loadRequests, 300);
 
     return () => clearTimeout(timeout);
-  }, [statusFilter, search]);
+  }, [statusFilter, priorityFilter, unitFilter, contractorFilter, sortBy, sortOrder, search, page]);
+
+  useEffect(() => {
+    if (!isManager) {
+      return;
+    }
+
+    Promise.all([getUnits(), getContractors()])
+      .then(([unitsRes, contractorsRes]) => {
+        setUnits(unitsRes.data.units || []);
+        setContractors(contractorsRes.data.contractors || []);
+      })
+      .catch(() => {
+        setUnits([]);
+        setContractors([]);
+      });
+  }, [isManager]);
 
   const statusOptions = [
     '',
@@ -152,7 +203,10 @@ export default function Requests() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search description..."
             className="w-64 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] py-2 pl-9 pr-3 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
           />
@@ -163,7 +217,10 @@ export default function Requests() {
             <button
               type="button"
               key={s || 'all'}
-              onClick={() => setStatusFilter(s)}
+              onClick={() => {
+                setStatusFilter(s);
+                setPage(1);
+              }}
               className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
                 statusFilter === s
                   ? 'bg-[color:var(--brand)] text-white'
@@ -174,6 +231,73 @@ export default function Requests() {
             </button>
           ))}
         </div>
+
+        <select
+          value={priorityFilter}
+          onChange={(e) => {
+            setPriorityFilter(e.target.value);
+            setPage(1);
+          }}
+          aria-label="Filter by priority"
+          className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink-soft)] outline-none focus:border-[color:var(--brand)]"
+        >
+          <option value="">All priorities</option>
+          {['Low', 'Medium', 'High', 'Urgent'].map((priority) => (
+            <option key={priority} value={priority}>{priority}</option>
+          ))}
+        </select>
+
+        {isManager && (
+          <select
+            value={unitFilter}
+            onChange={(e) => {
+              setUnitFilter(e.target.value);
+              setPage(1);
+            }}
+            aria-label="Filter by unit"
+            className="max-w-44 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink-soft)] outline-none focus:border-[color:var(--brand)]"
+          >
+            <option value="">All units</option>
+            {units.map((unit) => (
+              <option key={unit.id} value={unit.id}>{unit.unit_number}</option>
+            ))}
+          </select>
+        )}
+
+        {isManager && (
+          <select
+            value={contractorFilter}
+            onChange={(e) => {
+              setContractorFilter(e.target.value);
+              setPage(1);
+            }}
+            aria-label="Filter by contractor"
+            className="max-w-48 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink-soft)] outline-none focus:border-[color:var(--brand)]"
+          >
+            <option value="">All contractors</option>
+            {contractors.map((contractor) => (
+              <option key={contractor.id} value={contractor.id}>{contractor.name}</option>
+            ))}
+          </select>
+        )}
+
+        <select
+          value={`${sortBy}:${sortOrder}`}
+          onChange={(e) => {
+            const [nextSortBy, nextSortOrder] = e.target.value.split(':');
+            setSortBy(nextSortBy);
+            setSortOrder(nextSortOrder);
+            setPage(1);
+          }}
+          aria-label="Sort requests"
+          className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink-soft)] outline-none focus:border-[color:var(--brand)]"
+        >
+          <option value="created_at:desc">Newest first</option>
+          <option value="created_at:asc">Oldest first</option>
+          <option value="priority:desc">Priority: high to low</option>
+          <option value="priority:asc">Priority: low to high</option>
+          <option value="status:asc">Status: A–Z</option>
+        </select>
       </div>
 
       {error && (
@@ -195,8 +319,9 @@ export default function Requests() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-          {requests.map((req, i) => (
+        <>
+          <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+            {requests.map((req, i) => (
             <button
               type="button"
               key={req.id}
@@ -241,8 +366,38 @@ export default function Requests() {
                 {req.status}
               </span>
             </button>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="text-sm text-[color:var(--ink-soft)]">
+              Showing {requests.length} of {pagination.total} requests
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={pagination.page <= 1}
+                aria-label="Previous page"
+                className="rounded-lg border border-[color:var(--border)] p-2 text-[color:var(--ink-soft)] transition hover:bg-[color:var(--surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm tabular-nums text-[color:var(--ink-soft)]">
+                {pagination.page} / {pagination.total_pages || 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(pagination.total_pages, current + 1))}
+                disabled={pagination.page >= pagination.total_pages}
+                aria-label="Next page"
+                className="rounded-lg border border-[color:var(--border)] p-2 text-[color:var(--ink-soft)] transition hover:bg-[color:var(--surface-2)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {createModalOpen && (
@@ -260,7 +415,12 @@ export default function Requests() {
           request={selectedRequest}
           isManager={isManager}
           onClose={() => setSelectedRequest(null)}
-          onUpdated={() => loadRequests()}
+          onUpdated={(updatedRequest) => {
+            if (updatedRequest) {
+              setSelectedRequest(updatedRequest);
+            }
+            loadRequests();
+          }}
         />
       )}
     </div>
@@ -276,7 +436,7 @@ function CreateRequestModal({ onClose, onCreated }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    getUnits()
+    getRequestUnitOptions()
       .then((res) => {
         setUnits(res.data.units || []);
       })
@@ -422,6 +582,9 @@ function RequestDetailModal({
   const [contractors, setContractors] = useState([]);
   const [selectedContractor, setSelectedContractor] = useState('');
   const [currentStatus, setCurrentStatus] = useState(request.status);
+  const [editingDetails, setEditingDetails] = useState(false);
+  const [description, setDescription] = useState(request.description);
+  const [priority, setPriority] = useState(request.priority);
 
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -545,6 +708,33 @@ function RequestDetailModal({
       setError(err.response?.data?.error || 'Could not add note.');
     } finally {
       setAddingNote(false);
+    }
+  };
+
+  const handleSaveDetails = async (e) => {
+    e.preventDefault();
+    const trimmedDescription = description.trim();
+
+    if (!trimmedDescription) {
+      setError('Description cannot be empty.');
+      return;
+    }
+
+    setError('');
+    setBusy(true);
+
+    try {
+      const response = await updateRequest(request.id, {
+        description: trimmedDescription,
+        priority,
+      });
+      setEditingDetails(false);
+      await loadDetails();
+      onUpdated(response.data.request);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not update request details.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -701,9 +891,11 @@ function RequestDetailModal({
               {request.unit_number}
             </h2>
 
-            <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
-              {request.description}
-            </p>
+            {!editingDetails && (
+              <p className="mt-1 text-sm text-[color:var(--ink-soft)]">
+                {description}
+              </p>
+            )}
           </div>
 
           <button
@@ -716,7 +908,8 @@ function RequestDetailModal({
           </button>
         </div>
 
-        <div className="mb-5 flex items-center gap-2">
+        {!editingDetails && (
+          <div className="mb-5 flex items-center gap-2">
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-medium ${
               STATUS_STYLES[currentStatus]
@@ -727,17 +920,79 @@ function RequestDetailModal({
 
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-              PRIORITY_STYLES[request.priority]
+              PRIORITY_STYLES[priority]
             }`}
           >
-            {request.priority} priority
+            {priority} priority
           </span>
-        </div>
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 rounded-xl bg-[color:var(--red-tint)] px-4 py-2.5 text-sm text-[color:var(--red)]">
             {error}
           </div>
+        )}
+
+        {editingDetails ? (
+          <form onSubmit={handleSaveDetails} className="mb-5 space-y-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]" htmlFor="request-description">
+                Description
+              </label>
+              <textarea
+                id="request-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                required
+                className="w-full resize-y rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[color:var(--ink)]" htmlFor="request-priority">
+                Priority
+              </label>
+              <select
+                id="request-priority"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)] outline-none focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
+              >
+                {['Low', 'Medium', 'High', 'Urgent'].map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDescription(request.description);
+                  setPriority(request.priority);
+                  setEditingDetails(false);
+                }}
+                className="rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm font-medium text-[color:var(--ink-soft)] hover:bg-[color:var(--surface)]"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-xl bg-[color:var(--brand)] px-3 py-2 text-sm font-medium text-white hover:bg-[color:var(--brand-dark)] disabled:opacity-50"
+              >
+                {busy ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditingDetails(true)}
+            className="mb-5 text-sm font-medium text-[color:var(--brand)] hover:text-[color:var(--brand-dark)]"
+          >
+            Edit description and priority
+          </button>
         )}
 
         {isManager &&

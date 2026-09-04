@@ -2,8 +2,30 @@ from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models import Unit
 from app.utils.auth_helpers import role_required
+from flask_jwt_extended import jwt_required
 
 units_bp = Blueprint('units', __name__)
+
+
+@units_bp.route('/request-options', methods=['GET'])
+@jwt_required()
+def list_request_options():
+    """Return the minimum unit data needed to report a maintenance issue.
+
+    This keeps rent and tenant details manager-only while allowing a contractor
+    to select the affected unit when creating a request.
+    """
+    units = Unit.query.filter_by(is_archived=False).order_by(Unit.unit_number.asc()).all()
+    return jsonify({
+        'units': [
+            {
+                'id': unit.id,
+                'unit_number': unit.unit_number,
+                'address': unit.address,
+            }
+            for unit in units
+        ]
+    }), 200
 
 
 @units_bp.route('', methods=['POST'])

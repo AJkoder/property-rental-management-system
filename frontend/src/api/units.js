@@ -3,6 +3,8 @@ import apiClient from "./client";
 export const getUnits = (includeArchived = false) =>
   apiClient.get("/units", { params: { include_archived: includeArchived } });
 
+export const getRequestUnitOptions = () => apiClient.get('/units/request-options');
+
 export const createUnit = (data) => apiClient.post("/units", data);
 
 export const updateUnit = (id, data) => apiClient.put(`/units/${id}`, data);

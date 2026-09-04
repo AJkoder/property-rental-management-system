@@ -11,7 +11,7 @@ import Payments from './pages/Payments';
 import Dashboard from './pages/Dashboard';
 import Alerts from './pages/Alerts';
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, managerOnly = false }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -24,6 +24,10 @@ function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (managerOnly && user.role !== 'manager') {
+    return <Navigate to="/requests" replace />;
   }
 
   return <Layout>{children}</Layout>;
@@ -65,7 +69,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute managerOnly>
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -75,7 +79,7 @@ function App() {
           <Route
             path="/units"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute managerOnly>
                 <Units />
               </ProtectedRoute>
             }
@@ -95,7 +99,7 @@ function App() {
           <Route
             path="/payments"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute managerOnly>
                 <Payments />
               </ProtectedRoute>
             }
@@ -105,7 +109,7 @@ function App() {
           <Route
             path="/alerts"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute managerOnly>
                 <Alerts />
               </ProtectedRoute>
             }

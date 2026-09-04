@@ -4,6 +4,8 @@ export const getRequests = (params = {}) => apiClient.get('/requests', { params 
 
 export const createRequest = (data) => apiClient.post('/requests', data);
 
+export const updateRequest = (id, data) => apiClient.put(`/requests/${id}`, data);
+
 export const updateRequestStatus = (id, status) =>
   apiClient.patch(`/requests/${id}/status`, { status });
 
