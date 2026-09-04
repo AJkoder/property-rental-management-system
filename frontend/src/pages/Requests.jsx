@@ -985,7 +985,7 @@ function RequestDetailModal({
               </button>
             </div>
           </form>
-        ) : (
+        ) : isManager ? (
           <button
             type="button"
             onClick={() => setEditingDetails(true)}
@@ -993,7 +993,7 @@ function RequestDetailModal({
           >
             Edit description and priority
           </button>
-        )}
+        ) : null}
 
         {isManager &&
           NEXT_STATUS[currentStatus]?.length > 0 && (
