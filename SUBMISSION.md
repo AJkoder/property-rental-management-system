@@ -1,6 +1,6 @@
 # Submission
 
-Submitted Successfully.
+Project completed Successfully.
 
 ## Links
 
