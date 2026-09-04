@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, Response
 from app.extensions import db
-from app.models import Payment, Unit
+from app.models import Alert, Payment, Unit
 from app.utils.auth_helpers import role_required, get_current_user_id
 import csv
 import io
@@ -98,6 +98,16 @@ def bulk_record_payments():
         # tenant completes a partial payment later in the same month.
         for existing_payment in existing_payments:
             existing_payment.match_status = status
+
+        active_alert = Alert.query.filter_by(
+            unit_id=unit_id,
+            month_covered=month_covered,
+            is_dismissed=False,
+        ).first()
+        if status == 'underpaid' and active_alert:
+            active_alert.reason = 'underpaid'
+        elif status != 'underpaid' and active_alert:
+            db.session.delete(active_alert)
 
         payment = Payment(
             unit_id=unit_id,

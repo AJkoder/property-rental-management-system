@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 
 from app.extensions import db
-from app.models import Assignment, MaintenanceRequest, Payment, StatusHistory, Unit, User
+from app.models import Alert, Assignment, MaintenanceRequest, Payment, StatusHistory, Unit, User
 
 
 DEMO_MANAGER_EMAIL = 'manager@test.com'
@@ -15,7 +15,7 @@ def create_manager_demo_data(manager_id):
     month = now.strftime('%Y-%m')
     units = [
         Unit(manager_id=manager_id, unit_number='A-101', address='12 Park View Road', rent_amount=18500, tenant_name='Ananya Sharma'),
-        Unit(manager_id=manager_id, unit_number='A-102', address='12 Park View Road', rent_amount=18500, tenant_name='Rahul Mehta'),
+        Unit(manager_id=manager_id, unit_number='A-102', address='12 Park View Road', rent_amount=15000, tenant_name='Rahul Mehta'),
         Unit(manager_id=manager_id, unit_number='B-201', address='12 Park View Road', rent_amount=22000, tenant_name='Priya Nair'),
         Unit(manager_id=manager_id, unit_number='B-202', address='12 Park View Road', rent_amount=22000, tenant_name='Arjun Kapoor'),
         Unit(manager_id=manager_id, unit_number='C-301', address='12 Park View Road', rent_amount=26500, tenant_name=None),
@@ -25,7 +25,9 @@ def create_manager_demo_data(manager_id):
 
     payments = [
         Payment(unit_id=units[0].id, amount_paid=18500, expected_amount=18500, month_covered=month, match_status='matched', recorded_by=manager_id),
-        Payment(unit_id=units[1].id, amount_paid=18500, expected_amount=18500, month_covered=month, match_status='matched', recorded_by=manager_id),
+        # A completed installment plan: ₹13,000 + ₹2,000 against ₹15,000.
+        Payment(unit_id=units[1].id, amount_paid=13000, expected_amount=15000, month_covered=month, match_status='matched', recorded_by=manager_id),
+        Payment(unit_id=units[1].id, amount_paid=2000, expected_amount=15000, month_covered=month, match_status='matched', recorded_by=manager_id),
         Payment(unit_id=units[2].id, amount_paid=18000, expected_amount=22000, month_covered=month, match_status='underpaid', recorded_by=manager_id),
         Payment(unit_id=units[3].id, amount_paid=22000, expected_amount=22000, month_covered=month, match_status='matched', recorded_by=manager_id),
     ]
@@ -81,6 +83,8 @@ def ensure_documented_demo_data():
         create_manager_demo_data(manager.id)
         db.session.flush()
 
+    repair_documented_demo_payments(manager.id)
+
     if not contractor:
         return
 
@@ -111,3 +115,72 @@ def ensure_documented_demo_data():
             detail=f'Assigned {contractor.name}',
             changed_by=manager.id,
         ))
+
+
+def repair_documented_demo_payments(manager_id):
+    """Upgrade old reviewer seed data and reconcile stale monthly statuses."""
+    month = datetime.now(timezone.utc).strftime('%Y-%m')
+    installment_unit = Unit.query.filter_by(
+        manager_id=manager_id,
+        unit_number='A-102',
+    ).first()
+
+    if installment_unit:
+        existing = Payment.query.filter_by(
+            unit_id=installment_unit.id,
+            month_covered=month,
+        ).all()
+        is_legacy_seed = (
+            len(existing) == 1
+            and float(existing[0].amount_paid) == 18500
+            and float(existing[0].expected_amount) == 18500
+        )
+        if is_legacy_seed:
+            # Replace only the old known seed row; do not overwrite demo data
+            # that a reviewer has intentionally entered.
+            Payment.query.filter_by(
+                unit_id=installment_unit.id,
+                month_covered=month,
+            ).delete()
+            Alert.query.filter_by(
+                unit_id=installment_unit.id,
+                month_covered=month,
+            ).delete()
+            installment_unit.rent_amount = 15000
+            db.session.add_all([
+                Payment(
+                    unit_id=installment_unit.id,
+                    amount_paid=13000,
+                    expected_amount=15000,
+                    month_covered=month,
+                    match_status='matched',
+                    recorded_by=manager_id,
+                ),
+                Payment(
+                    unit_id=installment_unit.id,
+                    amount_paid=2000,
+                    expected_amount=15000,
+                    month_covered=month,
+                    match_status='matched',
+                    recorded_by=manager_id,
+                ),
+            ])
+
+    # Repair only metadata: records with installments must reflect their
+    # combined monthly total, even when they were saved by older code.
+    units = Unit.query.filter_by(manager_id=manager_id).all()
+    for unit in units:
+        payments = Payment.query.filter_by(
+            unit_id=unit.id,
+            month_covered=month,
+        ).all()
+        if not payments:
+            continue
+        monthly_total = sum(float(payment.amount_paid) for payment in payments)
+        status = (
+            'matched' if monthly_total == float(unit.rent_amount)
+            else 'underpaid' if monthly_total < float(unit.rent_amount)
+            else 'overpaid'
+        )
+        for payment in payments:
+            payment.match_status = status

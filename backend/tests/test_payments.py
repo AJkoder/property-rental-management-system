@@ -10,7 +10,8 @@ from flask_jwt_extended import create_access_token
 
 from app import create_app
 from app.extensions import db
-from app.models import Unit, User
+from app.models import Alert, Payment, Unit, User
+from app.services.demo_data import repair_documented_demo_payments
 
 
 class PaymentInstallmentTests(unittest.TestCase):
@@ -77,6 +78,13 @@ class PaymentInstallmentTests(unittest.TestCase):
         self.assertEqual(first.status_code, 201)
         self.assertEqual(first.get_json()['summary']['underpaid'], 1)
 
+        db.session.add(Alert(
+            unit_id=self.unit.id,
+            month_covered=self.month,
+            reason='underpaid',
+        ))
+        db.session.commit()
+
         second = self.client.post(
             '/api/payments/bulk',
             json={'payments': [{
@@ -96,6 +104,41 @@ class PaymentInstallmentTests(unittest.TestCase):
         dashboard = self.client.get('/api/dashboard/summary', headers=self.headers).get_json()
         self.assertEqual(dashboard['rent']['total_collected_this_month'], 15000)
         self.assertEqual(dashboard['rent']['underpaid_count'], 0)
+        self.assertEqual(
+            self.client.get('/api/alerts', headers=self.headers).get_json()['alerts'],
+            [],
+        )
+
+    def test_legacy_demo_payment_is_replaced_with_completed_installments(self):
+        demo_unit = Unit(
+            manager_id=self.manager.id,
+            unit_number='A-102',
+            address='Demo address',
+            rent_amount=18500,
+            tenant_name='Demo Tenant',
+        )
+        db.session.add(demo_unit)
+        db.session.flush()
+        db.session.add(Payment(
+            unit_id=demo_unit.id,
+            amount_paid=18500,
+            expected_amount=18500,
+            month_covered=self.month,
+            match_status='matched',
+            recorded_by=self.manager.id,
+        ))
+        db.session.commit()
+
+        repair_documented_demo_payments(self.manager.id)
+        db.session.commit()
+
+        payments = Payment.query.filter_by(
+            unit_id=demo_unit.id,
+            month_covered=self.month,
+        ).all()
+        self.assertEqual(float(demo_unit.rent_amount), 15000)
+        self.assertEqual(sorted(float(payment.amount_paid) for payment in payments), [2000, 13000])
+        self.assertEqual({payment.match_status for payment in payments}, {'matched'})
 
 
 if __name__ == '__main__':
