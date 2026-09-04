@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models import User
 from app.utils.auth_helpers import role_required
-from app.services.demo_data import create_manager_demo_data
+from app.services.demo_data import create_manager_demo_data, ensure_documented_demo_data
 from flask_jwt_extended import create_access_token
 
 auth_bp = Blueprint('auth', __name__)
@@ -84,6 +84,10 @@ def login():
 
     if not user or not user.check_password(password):
         return jsonify({'error': 'Invalid email or password'}), 401
+
+    if user.email in ('manager@test.com', 'ramesh@test.com'):
+        ensure_documented_demo_data()
+        db.session.commit()
 
     access_token = create_access_token(
         identity=user.id,

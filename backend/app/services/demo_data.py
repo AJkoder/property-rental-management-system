@@ -2,7 +2,11 @@
 from datetime import datetime, timedelta, timezone
 
 from app.extensions import db
-from app.models import MaintenanceRequest, Payment, StatusHistory, Unit
+from app.models import Assignment, MaintenanceRequest, Payment, StatusHistory, Unit, User
+
+
+DEMO_MANAGER_EMAIL = 'manager@test.com'
+DEMO_CONTRACTOR_EMAIL = 'ramesh@test.com'
 
 
 def create_manager_demo_data(manager_id):
@@ -60,3 +64,47 @@ def create_manager_demo_data(manager_id):
                 changed_by=manager_id,
                 changed_at=created_at + timedelta(hours=2),
             ))
+
+
+def ensure_documented_demo_data():
+    """Populate the credentials published in SUBMISSION.md without duplicates."""
+    manager = User.query.filter_by(email=DEMO_MANAGER_EMAIL, role='manager').first()
+    contractor = User.query.filter_by(email=DEMO_CONTRACTOR_EMAIL, role='contractor').first()
+
+    if not manager:
+        return
+
+    if not Unit.query.filter_by(manager_id=manager.id).first():
+        create_manager_demo_data(manager.id)
+        db.session.flush()
+
+    if not contractor:
+        return
+
+    requests = (
+        MaintenanceRequest.query
+        .join(Unit)
+        .filter(
+            Unit.manager_id == manager.id,
+            MaintenanceRequest.status.in_(['Reported', 'Triaged', 'Scheduled']),
+        )
+        .order_by(MaintenanceRequest.created_at.asc())
+        .limit(2)
+        .all()
+    )
+    for maintenance_request in requests:
+        if Assignment.query.filter_by(
+            request_id=maintenance_request.id,
+            contractor_id=contractor.id,
+        ).first():
+            continue
+        db.session.add(Assignment(
+            request_id=maintenance_request.id,
+            contractor_id=contractor.id,
+        ))
+        db.session.add(StatusHistory(
+            request_id=maintenance_request.id,
+            event_type='assignment_added',
+            detail=f'Assigned {contractor.name}',
+            changed_by=manager.id,
+        ))
