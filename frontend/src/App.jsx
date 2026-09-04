@@ -1,15 +1,20 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import Layout from './components/Layout';
 
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Units from './pages/Units';
-import Requests from './pages/Requests';
-import Payments from './pages/Payments';
-import Dashboard from './pages/Dashboard';
-import Alerts from './pages/Alerts';
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
+const Units = lazy(() => import('./pages/Units'));
+const Requests = lazy(() => import('./pages/Requests'));
+const Payments = lazy(() => import('./pages/Payments'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Alerts = lazy(() => import('./pages/Alerts'));
+
+function PageLoader() {
+  return <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-400">Loading...</div>;
+}
 
 function ProtectedRoute({ children, managerOnly = false }) {
   const { user, loading } = useAuth();
@@ -60,6 +65,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
@@ -121,6 +127,7 @@ function App() {
           {/* Any unknown URL */}
           <Route path="*" element={<RoleBasedRedirect />} />
         </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   );
