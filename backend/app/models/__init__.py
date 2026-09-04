@@ -5,3 +5,4 @@ from app.models.assignment import Assignment
 from app.models.status_history import StatusHistory
 from app.models.payment import Payment
 from app.models.alert import Alert
+from app.models.attachment import Attachment
