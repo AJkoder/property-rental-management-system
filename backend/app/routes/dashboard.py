@@ -87,23 +87,27 @@ def dashboard_summary():
         Unit.manager_id == manager_id,
     ).scalar()
 
-    underpaid_this_month = Payment.query.filter(
-        Payment.unit.has(Unit.manager_id == manager_id),
+    month_payments = Payment.query.join(Unit).filter(
         Payment.month_covered == current_month,
-        Payment.match_status == 'underpaid'
-    ).count()
+        Unit.manager_id == manager_id,
+    ).all()
+    paid_by_unit = {}
+    for payment in month_payments:
+        paid_by_unit[payment.unit_id] = paid_by_unit.get(payment.unit_id, 0) + float(payment.amount_paid)
+
+    active_units = Unit.query.filter_by(manager_id=manager_id, is_archived=False).all()
+    rent_by_unit = {unit.id: float(unit.rent_amount) for unit in active_units}
+    underpaid_this_month = sum(
+        1 for unit_id, amount_paid in paid_by_unit.items()
+        if amount_paid < rent_by_unit.get(unit_id, 0)
+    )
 
     now = datetime.now(timezone.utc)
     if now.day <= GRACE_PERIOD_DAYS:
         units_overdue_this_month = underpaid_this_month
     else:
-        paid_unit_ids_this_month = {
-            p.unit_id for p in Payment.query.filter(
-                Payment.unit.has(Unit.manager_id == manager_id),
-                Payment.month_covered == current_month,
-            ).all()
-        }
-        all_active_unit_ids = {u.id for u in Unit.query.filter_by(manager_id=manager_id, is_archived=False).all()}
+        paid_unit_ids_this_month = set(paid_by_unit)
+        all_active_unit_ids = set(rent_by_unit)
         units_overdue_this_month = len(all_active_unit_ids - paid_unit_ids_this_month) + underpaid_this_month
 
     return jsonify({

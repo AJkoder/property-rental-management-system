@@ -36,11 +36,17 @@ def generate_alerts():
         if existing_alert:
             continue  # already has an alert this month, don't duplicate
 
-        payment = Payment.query.filter_by(unit_id=unit.id, month_covered=current_month).first()
+        monthly_total = sum(
+            float(payment.amount_paid)
+            for payment in Payment.query.filter_by(
+                unit_id=unit.id,
+                month_covered=current_month,
+            ).all()
+        )
 
-        if not payment:
+        if monthly_total == 0:
             reason = 'no_payment'
-        elif payment.match_status == 'underpaid':
+        elif monthly_total < float(unit.rent_amount):
             reason = 'underpaid'
         else:
             continue  # paid in full or overpaid, no alert needed

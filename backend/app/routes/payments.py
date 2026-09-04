@@ -42,7 +42,6 @@ def bulk_record_payments():
     user_id = get_current_user_id()
     results = {'matched': [], 'underpaid': [], 'overpaid': [], 'unmatched': []}
     created_payments = []
-    submitted_keys = set()
 
     for entry in entries:
         if not isinstance(entry, dict):
@@ -60,7 +59,7 @@ def bulk_record_payments():
             })
             continue
 
-        unit = Unit.query.get(unit_id)
+        unit = db.session.get(Unit, unit_id)
         if not unit or unit.manager_id != user_id:
             results['unmatched'].append({
                 'unit_id': unit_id,
@@ -72,14 +71,6 @@ def bulk_record_payments():
             results['unmatched'].append({
                 'unit_id': unit_id,
                 'reason': 'month_covered must use YYYY-MM format'
-            })
-            continue
-
-        payment_key = (unit_id, month_covered)
-        if payment_key in submitted_keys or Payment.query.filter_by(unit_id=unit_id, month_covered=month_covered).first():
-            results['unmatched'].append({
-                'unit_id': unit_id,
-                'reason': 'A payment for this unit and month already exists'
             })
             continue
 
@@ -95,7 +86,18 @@ def bulk_record_payments():
             continue
 
         expected_amount = float(unit.rent_amount)
-        status = classify_payment(amount_paid, expected_amount)
+        existing_payments = Payment.query.filter_by(
+            unit_id=unit_id,
+            month_covered=month_covered,
+        ).all()
+        monthly_total = sum(float(payment.amount_paid) for payment in existing_payments) + amount_paid
+        status = classify_payment(monthly_total, expected_amount)
+
+        # Every installment reflects the current balance for its rent month.
+        # This keeps history, filters, alerts, and dashboards consistent after a
+        # tenant completes a partial payment later in the same month.
+        for existing_payment in existing_payments:
+            existing_payment.match_status = status
 
         payment = Payment(
             unit_id=unit_id,
@@ -106,13 +108,12 @@ def bulk_record_payments():
             recorded_by=user_id
         )
         db.session.add(payment)
-        created_payments.append((status, payment))
-        submitted_keys.add(payment_key)
+        created_payments.append(payment)
 
     db.session.flush()  # assigns IDs and makes relationships available
 
-    for status, payment in created_payments:
-        results[status].append(payment.to_dict())
+    for payment in created_payments:
+        results[payment.match_status].append(payment.to_dict())
 
     db.session.commit()
 
@@ -158,25 +159,22 @@ def export_csv():
     manager_id = get_current_user_id()
     units = Unit.query.filter_by(manager_id=manager_id, is_archived=False).order_by(Unit.unit_number.asc()).all()
 
-    payments_by_unit = {
-        p.unit_id: p
-        for p in Payment.query.join(Unit).filter(
+    payments_by_unit = {}
+    for payment in Payment.query.join(Unit).filter(
             Payment.month_covered == month_filter,
             Unit.manager_id == manager_id,
-        ).all()
-    }
+        ).all():
+        payments_by_unit[payment.unit_id] = payments_by_unit.get(payment.unit_id, 0) + float(payment.amount_paid)
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['Unit Number', 'Tenant', 'Month', 'Monthly Rent', 'Amount Paid', 'Status'])
 
     for unit in units:
-        payment = payments_by_unit.get(unit.id)
-        if payment:
-            amount_paid = float(payment.amount_paid)
-            status = payment.match_status
+        amount_paid = payments_by_unit.get(unit.id, 0)
+        if amount_paid:
+            status = classify_payment(amount_paid, float(unit.rent_amount))
         else:
-            amount_paid = 0
             status = 'unpaid'
 
         writer.writerow([
