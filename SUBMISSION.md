@@ -1,6 +1,6 @@
 # Submission
 
-Fill this in and commit it. This is the first file we open.
+Project completed Successfully.
 
 ## Links
 
