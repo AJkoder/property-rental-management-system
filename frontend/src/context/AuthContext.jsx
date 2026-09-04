@@ -1,20 +1,22 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import apiClient from '../api/client';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('access_token');
     if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+      try {
+        return JSON.parse(storedUser);
+      } catch {
+        localStorage.removeItem('user');
+        localStorage.removeItem('access_token');
+      }
     }
-    setLoading(false);
-  }, []);
+    return null;
+  });
 
   const login = async (email, password) => {
     const response = await apiClient.post('/auth/login', { email, password });
@@ -41,7 +43,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, loading: false, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

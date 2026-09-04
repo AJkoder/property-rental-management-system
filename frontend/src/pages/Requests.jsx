@@ -134,7 +134,7 @@ export default function Requests() {
       const res = await getRequests(params);
       setRequests(res.data.requests);
       setPagination(res.data.pagination);
-    } catch (err) {
+    } catch {
       setError('Failed to load maintenance requests.');
     } finally {
       setLoading(false);
@@ -145,6 +145,8 @@ export default function Requests() {
     const timeout = setTimeout(loadRequests, 300);
 
     return () => clearTimeout(timeout);
+    // loadRequests intentionally changes every render; these are its inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, priorityFilter, unitFilter, contractorFilter, sortBy, sortOrder, search, page]);
 
   useEffect(() => {
@@ -648,7 +650,7 @@ function RequestDetailModal({
       );
 
       setAttachments(attachmentsWithData);
-    } catch (err) {
+    } catch {
       setError('Failed to load request details.');
     }
   };
@@ -665,6 +667,8 @@ function RequestDetailModal({
           setContractors([]);
         });
     }
+    // loadDetails intentionally changes every render; request and role scope it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [request.id, isManager]);
 
   const handleStatusChange = async (newStatus) => {
@@ -772,7 +776,7 @@ function RequestDetailModal({
       await removeAssignment(assignmentId);
 
       await loadDetails();
-    } catch (err) {
+    } catch {
       setError('Failed to remove assignment.');
     } finally {
       setBusy(false);

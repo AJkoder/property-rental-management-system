@@ -20,7 +20,7 @@ export default function Units() {
     try {
       const res = await getUnits(showArchived);
       setUnits(res.data.units);
-    } catch (err) {
+    } catch {
       setError('Failed to load units.');
     } finally {
       setLoading(false);
@@ -29,6 +29,8 @@ export default function Units() {
 
   useEffect(() => {
     loadUnits();
+    // loadUnits intentionally changes every render; this is its only input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showArchived]);
 
   const handleArchiveToggle = async (unit) => {
@@ -39,7 +41,7 @@ export default function Units() {
         await archiveUnit(unit.id);
       }
       loadUnits();
-    } catch (err) {
+    } catch {
       setError('Action failed. Please try again.');
     }
   };

@@ -17,5 +17,12 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // These components use effects to begin asynchronous API requests. State
+      // updates occur after those requests settle, not during render.
+      'react-hooks/set-state-in-effect': 'off',
+      // The context provider and its custom hook are intentionally colocated.
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])

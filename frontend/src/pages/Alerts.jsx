@@ -19,7 +19,7 @@ export default function Alerts() {
     try {
       const res = await getAlerts();
       setAlerts(res.data.alerts);
-    } catch (err) {
+    } catch {
       setError('Failed to load alerts.');
     } finally {
       setLoading(false);
@@ -50,7 +50,7 @@ export default function Alerts() {
     try {
       await dismissAlert(id);
       setAlerts(alerts.filter((a) => a.id !== id));
-    } catch (err) {
+    } catch {
       setError('Failed to dismiss alert.');
     }
   };

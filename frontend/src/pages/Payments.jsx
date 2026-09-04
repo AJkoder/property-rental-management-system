@@ -28,15 +28,15 @@ export default function Payments() {
   const [history, setHistory] = useState([]);
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    getUnits().then((res) => setUnits(res.data.units));
-    loadHistory();
-  }, []);
-
   const loadHistory = async () => {
     const res = await getPayments();
     setHistory(res.data.payments);
   };
+
+  useEffect(() => {
+    getUnits().then((res) => setUnits(res.data.units));
+    loadHistory();
+  }, []);
 
   const updateRow = (index, field, value) => {
     const newRows = [...rows];
@@ -73,7 +73,7 @@ export default function Payments() {
     setExporting(true);
     try {
       await exportPaymentsCsv();
-    } catch (err) {
+    } catch {
       setError('Export failed.');
     } finally {
       setExporting(false);
