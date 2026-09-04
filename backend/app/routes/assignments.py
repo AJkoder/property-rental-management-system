@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models import Assignment, MaintenanceRequest, User, StatusHistory
-from app.utils.auth_helpers import role_required, get_current_user_id
+from app.utils.auth_helpers import role_required, get_current_user_id, get_current_user_role
 from flask_jwt_extended import jwt_required
 
 assignments_bp = Blueprint('assignments', __name__)
@@ -57,6 +57,13 @@ def remove_assignment(assignment_id):
     contractor_name = assignment.contractor.name if assignment.contractor else 'contractor'
     request_id = assignment.request_id
 
+    # A scheduled request must keep at least one assignee. Otherwise a manager
+    # could satisfy the scheduling check and immediately leave it unassigned.
+    if assignment.request.status == 'Scheduled' and len(assignment.request.assignments) == 1:
+        return jsonify({
+            'error': 'Cannot remove the last contractor from a scheduled request. Move it back to Triaged first.'
+        }), 400
+
     db.session.delete(assignment)
 
     history = StatusHistory(
@@ -74,5 +81,18 @@ def remove_assignment(assignment_id):
 @assignments_bp.route('/request/<request_id>', methods=['GET'])
 @jwt_required()
 def list_assignments_for_request(request_id):
+    req = MaintenanceRequest.query.get(request_id)
+    if not req:
+        return jsonify({'error': 'Maintenance request not found'}), 404
+
+    if get_current_user_role() == 'contractor':
+        user_id = get_current_user_id()
+        is_assigned = Assignment.query.filter_by(
+            request_id=request_id,
+            contractor_id=user_id
+        ).first() is not None
+        if not is_assigned:
+            return jsonify({'error': 'You are not assigned to this request'}), 403
+
     assignments = Assignment.query.filter_by(request_id=request_id).all()
     return jsonify({'assignments': [a.to_dict() for a in assignments]}), 200

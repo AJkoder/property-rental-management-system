@@ -9,6 +9,9 @@ export const updateRequestStatus = (id, status) =>
 
 export const getRequestTimeline = (id) => apiClient.get(`/requests/${id}/timeline`);
 
+export const addRequestNote = (id, note) =>
+  apiClient.post(`/requests/${id}/notes`, { note });
+
 export const assignContractor = (requestId, contractorId) =>
   apiClient.post('/assignments', { request_id: requestId, contractor_id: contractorId });
 

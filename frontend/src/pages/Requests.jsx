@@ -6,6 +6,7 @@ import {
   createRequest,
   updateRequestStatus,
   getRequestTimeline,
+  addRequestNote,
   assignContractor,
   removeAssignment,
   getAssignmentsForRequest,
@@ -415,6 +416,8 @@ function RequestDetailModal({
   onUpdated,
 }) {
   const [timeline, setTimeline] = useState([]);
+  const [note, setNote] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
   const [assignments, setAssignments] = useState([]);
   const [contractors, setContractors] = useState([]);
   const [selectedContractor, setSelectedContractor] = useState('');
@@ -520,6 +523,28 @@ function RequestDetailModal({
       );
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleAddNote = async (e) => {
+    e.preventDefault();
+
+    const trimmedNote = note.trim();
+    if (!trimmedNote) {
+      return;
+    }
+
+    setError('');
+    setAddingNote(true);
+
+    try {
+      await addRequestNote(request.id, trimmedNote);
+      setNote('');
+      await loadDetails();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not add note.');
+    } finally {
+      setAddingNote(false);
     }
   };
 
@@ -918,6 +943,33 @@ function RequestDetailModal({
             Timeline
           </p>
 
+          <form onSubmit={handleAddNote} className="mb-4">
+            <label className="sr-only" htmlFor="request-note">
+              Add a note
+            </label>
+            <textarea
+              id="request-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={255}
+              rows={2}
+              placeholder="Add a note to the timeline..."
+              className="w-full resize-none rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2 text-sm text-[color:var(--ink)] outline-none transition placeholder:text-[color:var(--ink-faint)] focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand)]/25"
+            />
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <span className="text-xs text-[color:var(--ink-faint)]">
+                {note.length}/255
+              </span>
+              <button
+                type="submit"
+                disabled={!note.trim() || addingNote}
+                className="rounded-lg bg-[color:var(--brand)] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[color:var(--brand-dark)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {addingNote ? 'Adding...' : 'Add note'}
+              </button>
+            </div>
+          </form>
+
           <div className="space-y-3 border-l-2 border-[color:var(--border)] pl-4">
             {timeline.map((entry) => (
               <div
@@ -932,7 +984,9 @@ function RequestDetailModal({
                     ? entry.old_status
                       ? `${entry.old_status} → ${entry.new_status}`
                       : 'Reported'
-                    : entry.detail}
+                    : entry.event_type === 'note_added'
+                      ? `Note: ${entry.detail}`
+                      : entry.detail}
                 </p>
 
                 <p className="text-xs text-[color:var(--ink-faint)]">

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.extensions import db
-from app.models import Attachment, MaintenanceRequest, StatusHistory, User
-from app.utils.auth_helpers import get_current_user_id
+from app.models import Attachment, Assignment, MaintenanceRequest, StatusHistory, User
+from app.utils.auth_helpers import get_current_user_id, get_current_user_role
 from flask_jwt_extended import jwt_required
 import base64
 
@@ -18,6 +18,20 @@ ALLOWED_CONTENT_TYPES = [
 ]
 
 
+def _assert_can_access_request(req):
+    """Contractors may access attachments only on requests assigned to them."""
+    if get_current_user_role() != 'contractor':
+        return None
+
+    is_assigned = Assignment.query.filter_by(
+        request_id=req.id,
+        contractor_id=get_current_user_id()
+    ).first() is not None
+    if not is_assigned:
+        return jsonify({'error': 'You are not assigned to this request'}), 403
+    return None
+
+
 @attachments_bp.route('/request/<request_id>', methods=['POST'])
 @jwt_required()
 def upload_attachment(request_id):
@@ -25,6 +39,10 @@ def upload_attachment(request_id):
 
     if not req:
         return jsonify({'error': 'Maintenance request not found'}), 404
+
+    denied = _assert_can_access_request(req)
+    if denied:
+        return denied
 
     data = request.get_json()
 
@@ -87,6 +105,10 @@ def list_attachments(request_id):
     if not req:
         return jsonify({'error': 'Maintenance request not found'}), 404
 
+    denied = _assert_can_access_request(req)
+    if denied:
+        return denied
+
     attachments = (
         Attachment.query
         .filter_by(request_id=request_id)
@@ -109,6 +131,11 @@ def get_attachment(attachment_id):
     if not attachment:
         return jsonify({'error': 'Attachment not found'}), 404
 
+    req = MaintenanceRequest.query.get(attachment.request_id)
+    denied = _assert_can_access_request(req)
+    if denied:
+        return denied
+
     return jsonify({
         'attachment': attachment.to_dict(include_data=True)
     }), 200
@@ -127,6 +154,11 @@ def delete_attachment(attachment_id):
 
     if not user:
         return jsonify({'error': 'User not found'}), 404
+
+    req = MaintenanceRequest.query.get(attachment.request_id)
+    denied = _assert_can_access_request(req)
+    if denied:
+        return denied
 
     # Managers can delete any attachment.
     # Contractors can delete only attachments they uploaded.

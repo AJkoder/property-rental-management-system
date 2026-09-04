@@ -79,8 +79,13 @@ def list_requests():
 
     query = MaintenanceRequest.query
 
+    # Use EXISTS rather than joining the assignments table. This keeps one row per
+    # request and makes the contractor visibility rule apply before any optional
+    # contractor filter is added below.
     if role == 'contractor':
-        query = query.join(Assignment).filter(Assignment.contractor_id == user_id)
+        query = query.filter(
+            MaintenanceRequest.assignments.any(Assignment.contractor_id == user_id)
+        )
 
     status_filter = request.args.get('status')
     if status_filter:
@@ -100,7 +105,11 @@ def list_requests():
 
     contractor_filter = request.args.get('contractor_id')
     if contractor_filter:
-        query = query.join(Assignment).filter(Assignment.contractor_id == contractor_filter)
+        query = query.filter(
+            MaintenanceRequest.assignments.any(
+                Assignment.contractor_id == contractor_filter
+            )
+        )
 
     search = request.args.get('search')
     if search:
@@ -238,3 +247,34 @@ def get_timeline(request_id):
 
     history = StatusHistory.query.filter_by(request_id=request_id).order_by(StatusHistory.changed_at.asc()).all()
     return jsonify({'timeline': [h.to_dict() for h in history]}), 200
+
+
+@requests_bp.route('/<request_id>/notes', methods=['POST'])
+@jwt_required()
+def add_note(request_id):
+    """Append a human note to a request's immutable timeline."""
+    req = MaintenanceRequest.query.get(request_id)
+    if not req:
+        return jsonify({'error': 'Request not found'}), 404
+
+    denied = _assert_contractor_assigned(req)
+    if denied:
+        return denied
+
+    data = request.get_json()
+    note = data.get('note', '').strip() if isinstance(data, dict) else ''
+    if not note:
+        return jsonify({'error': 'note is required'}), 400
+    if len(note) > 255:
+        return jsonify({'error': 'note must be 255 characters or fewer'}), 400
+
+    history = StatusHistory(
+        request_id=req.id,
+        event_type='note_added',
+        detail=note,
+        changed_by=get_current_user_id()
+    )
+    db.session.add(history)
+    db.session.commit()
+
+    return jsonify({'message': 'Note added', 'timeline_entry': history.to_dict()}), 201
