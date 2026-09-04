@@ -85,11 +85,16 @@ def bulk_record_payments():
             })
             continue
 
-        expected_amount = float(unit.rent_amount)
         existing_payments = Payment.query.filter_by(
             unit_id=unit_id,
             month_covered=month_covered,
         ).all()
+        # The first payment for a month snapshots that month's agreed rent.
+        # A later rent change must not reclassify an already-recorded month.
+        expected_amount = (
+            float(existing_payments[0].expected_amount)
+            if existing_payments else float(unit.rent_amount)
+        )
         monthly_total = sum(float(payment.amount_paid) for payment in existing_payments) + amount_paid
         status = classify_payment(monthly_total, expected_amount)
 
@@ -145,12 +150,28 @@ def list_payments():
     if month_filter:
         query = query.filter(Payment.month_covered == month_filter)
 
-    status_filter = request.args.get('match_status')
-    if status_filter:
-        query = query.filter(Payment.match_status == status_filter)
-
     payments = query.order_by(Payment.recorded_at.desc()).all()
-    return jsonify({'payments': [p.to_dict() for p in payments]}), 200
+    monthly_totals = {}
+    monthly_expected = {}
+    for payment in payments:
+        key = (payment.unit_id, payment.month_covered)
+        monthly_totals[key] = monthly_totals.get(key, 0) + float(payment.amount_paid)
+        monthly_expected.setdefault(key, float(payment.expected_amount))
+
+    status_filter = request.args.get('match_status')
+    result = []
+    for payment in payments:
+        key = (payment.unit_id, payment.month_covered)
+        record = payment.to_dict()
+        # Always derive the display status from the full month. This makes old
+        # records correct even before the data migration has run.
+        record['match_status'] = classify_payment(
+            monthly_totals[key], monthly_expected[key]
+        )
+        if not status_filter or record['match_status'] == status_filter:
+            result.append(record)
+
+    return jsonify({'payments': result}), 200
 
 
 @payments_bp.route('/export', methods=['GET'])
@@ -170,11 +191,13 @@ def export_csv():
     units = Unit.query.filter_by(manager_id=manager_id, is_archived=False).order_by(Unit.unit_number.asc()).all()
 
     payments_by_unit = {}
+    expected_by_unit = {}
     for payment in Payment.query.join(Unit).filter(
             Payment.month_covered == month_filter,
             Unit.manager_id == manager_id,
         ).all():
         payments_by_unit[payment.unit_id] = payments_by_unit.get(payment.unit_id, 0) + float(payment.amount_paid)
+        expected_by_unit.setdefault(payment.unit_id, float(payment.expected_amount))
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -182,8 +205,9 @@ def export_csv():
 
     for unit in units:
         amount_paid = payments_by_unit.get(unit.id, 0)
+        expected_amount = expected_by_unit.get(unit.id, float(unit.rent_amount))
         if amount_paid:
-            status = classify_payment(amount_paid, float(unit.rent_amount))
+            status = classify_payment(amount_paid, expected_amount)
         else:
             status = 'unpaid'
 
@@ -191,7 +215,7 @@ def export_csv():
             unit.unit_number,
             unit.tenant_name or '',
             month_filter,
-            float(unit.rent_amount),
+            expected_amount,
             amount_paid,
             status
         ])

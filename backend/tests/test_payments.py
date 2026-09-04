@@ -85,6 +85,11 @@ class PaymentInstallmentTests(unittest.TestCase):
         ))
         db.session.commit()
 
+        # A rent increase after the first installment belongs to the next
+        # month; it must not change this month's ₹15,000 agreement.
+        self.unit.rent_amount = 20000
+        db.session.commit()
+
         second = self.client.post(
             '/api/payments/bulk',
             json={'payments': [{
@@ -108,6 +113,15 @@ class PaymentInstallmentTests(unittest.TestCase):
             self.client.get('/api/alerts', headers=self.headers).get_json()['alerts'],
             [],
         )
+
+        # Simulate a record saved by the old code. The list endpoint must
+        # still show the actual monthly result before the migration runs.
+        Payment.query.filter_by(unit_id=self.unit.id, month_covered=self.month).update({
+            'match_status': 'underpaid'
+        })
+        db.session.commit()
+        payment_history = self.client.get('/api/payments', headers=self.headers).get_json()['payments']
+        self.assertEqual({payment['match_status'] for payment in payment_history}, {'matched'})
 
     def test_legacy_demo_payment_is_replaced_with_completed_installments(self):
         demo_unit = Unit(

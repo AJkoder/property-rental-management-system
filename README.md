@@ -40,7 +40,7 @@ JWT_SECRET_KEY=generate-a-different-random-secret
 ```
 
 ```bash
-flask db upgrade
+flask --app run:app db upgrade
 python run.py
 ```
 

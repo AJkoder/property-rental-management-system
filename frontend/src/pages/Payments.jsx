@@ -117,8 +117,8 @@ export default function Payments() {
       {history.length > 0 && (
         <div className="mb-7 grid grid-cols-4 gap-4">
           <StatCard label="Collected this period" value={`₹${totalCollected.toLocaleString('en-IN')}`} accent="gold" />
-          <StatCard label="Matched" value={statusCounts.matched || 0} accent="green" />
-          <StatCard label="Underpaid" value={statusCounts.underpaid || 0} accent="gold" />
+            <StatCard label="Entries in paid months" value={statusCounts.matched || 0} accent="green" />
+            <StatCard label="Entries in underpaid months" value={statusCounts.underpaid || 0} accent="gold" />
           <StatCard label="Unmatched" value={statusCounts.unmatched || 0} accent="red" />
         </div>
       )}
@@ -243,7 +243,7 @@ export default function Payments() {
                   <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-faint)]">Month</th>
                   <th className="px-5 py-3 text-right text-xs font-semibold text-[color:var(--ink-faint)]">Expected</th>
                   <th className="px-5 py-3 text-right text-xs font-semibold text-[color:var(--ink-faint)]">Paid</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-faint)]">Status</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-[color:var(--ink-faint)]">Rent month status</th>
                 </tr>
               </thead>
               <tbody>

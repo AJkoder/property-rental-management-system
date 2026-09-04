@@ -92,11 +92,16 @@ def dashboard_summary():
         Unit.manager_id == manager_id,
     ).all()
     paid_by_unit = {}
+    expected_by_unit = {}
     for payment in month_payments:
         paid_by_unit[payment.unit_id] = paid_by_unit.get(payment.unit_id, 0) + float(payment.amount_paid)
+        expected_by_unit.setdefault(payment.unit_id, float(payment.expected_amount))
 
     active_units = Unit.query.filter_by(manager_id=manager_id, is_archived=False).all()
-    rent_by_unit = {unit.id: float(unit.rent_amount) for unit in active_units}
+    rent_by_unit = {
+        unit.id: expected_by_unit.get(unit.id, float(unit.rent_amount))
+        for unit in active_units
+    }
     underpaid_this_month = sum(
         1 for unit_id, amount_paid in paid_by_unit.items()
         if amount_paid < rent_by_unit.get(unit_id, 0)
