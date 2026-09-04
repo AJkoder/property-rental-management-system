@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutGrid, managerOnly: false },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutGrid, managerOnly: true },
   { to: '/units', label: 'Units', icon: Home, managerOnly: true },
   { to: '/requests', label: 'Maintenance', icon: Wrench, managerOnly: false },
   { to: '/payments', label: 'Rent', icon: Receipt, managerOnly: true },
