@@ -1,99 +1,57 @@
-# Project Plan
+# Build plan and delivery record
 
-## Session 1 — Setup & Foundation
-- Initialized Git repo, connected to GitHub (public)
-- Set up Flask app factory pattern (app/config.py, extensions.py, __init__.py)
-- Installed dependencies: Flask, SQLAlchemy, Flask-CORS, Flask-JWT-Extended, psycopg2, python-dotenv
-- Created Supabase PostgreSQL project (Singapore region), connected via Transaction Pooler
-- Verified DB connection successfully from Flask
-- Set up .gitignore to exclude .env and venv/
-- First commit + push to GitHub
+## Planning approach
 
-## Session 2 — Auth + Units CRUD
-- Added password hashing (bcrypt) to User model
-- Built signup/login endpoints with JWT token generation
-- Built role-based access control middleware (role_required decorator)
-- Tested and confirmed server-side role enforcement (contractor blocked from manager-only routes)
-- Added Unit model (units table) with soft-delete pattern
-- Built full Units CRUD: create, list, get, update, archive, restore
-- Tested all endpoints manually via curl, confirmed permission checks work correctly
+The brief suggested about 12 hours over a week. I used that as a scope constraint rather than a race: my aim was to complete the ten required behaviours reliably before adding a stretch feature. I did not keep an hour-by-hour timesheet or write individual estimates at the start of each session, so I do not want to invent precision after the fact. My best retrospective estimate is 14–15 hours: 7–8 on backend/data work, 4–5 on the React experience, and the rest on deployment, verification, documentation, and final fixes.
 
-## Session 3 — Maintenance Requests, Status Lifecycle, Assignments
-- Built MaintenanceRequest model with foreign key to Unit
-- Built Assignment model (many-to-many between requests and contractors)
-- Designed and implemented status state machine (Reported -> Triaged -> Scheduled -> Resolved)
-- Enforced "Scheduled requires contractor assigned" business rule
-- Enforced "Resolved reopens to Triaged, not Reported" rule
-- Built contractor assignment/removal endpoints (manager-only)
-- Built role-based request filtering (contractors see only their assigned requests)
-- Tested entire lifecycle end-to-end via curl: invalid transitions correctly blocked, valid path (Reported -> Triaged -> Scheduled -> Resolved -> Triaged) works correctly
+## Session 1 — foundation
 
-## Session 3 (cont.) — Immutable Audit Timeline
-- Added StatusHistory model, insert-only by design
-- Hooked automatic history logging into request creation and status update endpoints (same DB transaction)
-- Added /timeline endpoint to view full history of a request
-- Tested end-to-end: creation and status change both correctly logged with who/when/old/new
+**Plan:** establish a deployable Flask/PostgreSQL base before building features.
 
-## Session 4 — Search, Filter, Sort, Pagination
-- Extended requests list endpoint with: status/priority/unit_id filters, text search on description, whitelisted sort fields with asc/desc, page/per_page pagination (capped at 100/page)
-- Response includes pagination metadata (page, per_page, total, total_pages)
-- Tested all filter combinations, confirmed invalid sort_by is rejected cleanly (400, not a crash)
+**Delivered:** created the Flask app factory, shared extensions, Alembic setup, and environment-based configuration; created a Supabase PostgreSQL project and verified the connection; set up Git/GitHub and ignored local secrets.
 
-## Session 4 (cont.) — Bulk Rent Recording + CSV Export
-- Added Payment model with amount_paid, expected_amount (snapshotted), month_covered, match_status
-- Built bulk recording endpoint: classifies each entry as matched/underpaid/overpaid/unmatched, partial failures don't block the rest of the batch
-- Built CSV export endpoint (streamed in-memory, no temp files)
-- Bug hit + fixed: to_dict() was called before db.session.commit(), so generated IDs and relationships weren't populated yet. Fixed with db.session.flush() before building response.
-- Tested bulk entry with a mix of all four outcomes, tested CSV export end-to-end
+**Why first:** every required feature relies on durable relational data. Validating the connection and migration flow early was cheaper than discovering a hosting/database problem after the UI existed.
 
-## Session 5 — Dashboard
-- Built /api/dashboard/summary endpoint: unit occupancy, open/resolved maintenance counts, requests by status and priority, rent underpayment and missing-payment counts for current month
-- Manager-only access, tested contractor correctly blocked (403)
-- Verified counts against known test data
+## Session 2 — identity and units
 
-## Session 5 (cont.) — Rent Alerts
-- Added Alert model with unique (unit_id, month_covered) constraint
-- Built /generate endpoint: respects grace period, creates no_payment or underpaid alerts, skips units already fully paid, doesn't duplicate existing alerts
-- Built list (with include_dismissed filter) and dismiss endpoints
-- Tested grace period blocking (day 1 of month correctly produces zero alerts)
-- Tested core matching logic directly: paid-in-full unit correctly skipped, underpaid unit correctly flagged
-- Tested dismiss/list/include_dismissed flow end-to-end via API
-- This completes all 10 core assignment goals on the backend. Next: React frontend + deployment.
+**Plan:** establish roles and the core entity that every payment and request references.
 
-## Session 6 — Frontend Foundation
-- Scaffolded React app with Vite, Tailwind CSS v4 (via @tailwindcss/vite plugin)
-- Set up axios API client with automatic JWT attachment and 401 auto-logout handling
-- Built AuthContext for shared login state across the app
-- Built Login and Signup pages with role selection
-- Set up React Router with a ProtectedRoute wrapper (redirects to /login if not authenticated)
-- Tested full flow end-to-end: signup, login, protected dashboard route, logout, direct URL access while logged out correctly redirects
+**Delivered:** bcrypt password hashing, JWT signup/login, server-side role decorator, and manager-only unit CRUD with archive/restore. Manual API checks included proving a contractor token was rejected on manager-only endpoints.
 
-## Session 6 (cont.) — Units and Maintenance Requests Pages
-- Built Units page: list (table), create/edit modal, archive/restore, role-aware (contractor sees view-only)
-- Added GET /api/auth/contractors backend endpoint to support the assignment dropdown UI
-- Built Maintenance Requests page: search + status filter, create modal, click-to-open detail modal with status transition buttons (only valid next states shown, mirroring backend state machine), contractor assignment UI, and timeline view
-- Fixed a file-location mixup where Layout.jsx was accidentally created outside frontend/ - caught via git status before it caused real damage, corrected with git mv equivalent
-- Tested full flow end-to-end: create request, change status through full lifecycle, assign/remove contractor, view timeline
+**Why this order:** units are the centre of the domain model, while roles determine the boundaries for every later route.
 
-## Session 6 (cont.) — Bulk Rent Page
-- Built Payments page: dynamic add/remove row bulk entry form, submission result summary (matched/underpaid/overpaid/unmatched counts with icons), payment history table
-- CSV export implemented via authenticated blob download (not a raw link with token in URL) - keeps the JWT in the request header as normal, avoids exposing tokens in URLs
-- Tested bulk entry and export end-to-end in browser
+## Session 3 — maintenance workflow and history
 
-## Session 6 (cont.) — Dashboard and Alerts Pages
-- Built real Dashboard: 4 stat cards (units, open requests, resolved this week, rent issues), donut chart for requests-by-status (recharts), horizontal bar breakdown for open requests by priority
-- Built Alerts page: manual "check for new alerts" trigger, dismiss action, correctly reflects grace period behavior from backend
-- All 6 core frontend pages now complete and functionally tested end-to-end: Login/Signup, Units, Maintenance Requests, Payments, Dashboard, Alerts
-- Remaining work: UI polish pass (loading/empty/error state consistency, spacing/responsive audit), deployment (Render + Vercel), final README/SUBMISSION.md
+**Plan:** implement the most rule-heavy part before spending time on presentation.
 
-## Session 7 — Deployment
-- Backend deployed to Render (Singapore region): added gunicorn + Procfile, set environment variables (DATABASE_URL, SECRET_KEY, JWT_SECRET_KEY, PYTHON_VERSION), root directory set to backend/
-- Fixed: SECRET_KEY and JWT_SECRET_KEY were never actually generated locally (only DATABASE_URL existed, app was silently using insecure fallback defaults from config.py) - generated proper random secrets for both local and Render
-- Frontend deployed to Vercel: root directory set to frontend/, VITE_API_URL environment variable pointing to live Render backend
-- Set up cron-job.org to ping /api/health every 10 minutes, preventing Render free-tier cold starts
-- Replaced default Vite favicon and page title with app-appropriate branding
-- Tested full live app end-to-end: auth, units, requests, payments, dashboard, alerts all working correctly against live Supabase database through deployed backend and frontend
+**Delivered:** maintenance requests, the many-to-many contractor assignment table, a status state machine, the scheduled-assignee guard, reopen-to-Triaged behaviour, and an append-only history table.
 
-Live URLs:
-- Frontend: https://property-rental-management-system-nine.vercel.app
-- Backend: https://property-rental-backend-ummm.onrender.com
+**What took longer:** lifecycle behaviour has more edge cases than CRUD. I tested the complete path—Reported → Triaged → Scheduled → Resolved → Triaged—and invalid moves rather than trusting the happy path.
+
+## Session 4 — portfolio operations
+
+**Plan:** add the remaining backend behaviours while the data model was still fresh.
+
+**Delivered:** SQL-side request search/filter/sort/pagination, bulk rent recording with per-row results, rent-roll CSV export, dashboard aggregates, and monthly rent alerts. A flush-before-response issue in the bulk-payment flow was found during API testing and corrected so newly created IDs/relationships were available in the result.
+
+**Why this order:** these features are independent enough to build after the core request/unit relationships, and their APIs gave the frontend stable targets.
+
+## Session 5 — React interface
+
+**Plan:** build a usable end-to-end path for each role, not isolated API demonstrations.
+
+**Delivered:** Vite/React foundation, persistent auth context, role-aware navigation, then Units, Requests, Payments, Dashboard, and Alerts pages. The request detail view combined assignment, status actions, photos, notes, and history; the payment page supports a batch result and CSV download.
+
+**What I prioritised:** clear operational screens and direct feedback over a broad component library. The UI mirrors likely next status moves, but the server remains the rule enforcer.
+
+## Session 6 — deployment, literal review, and polish
+
+**Plan:** prove the hosted application works, then compare it directly with the brief rather than with my own condensed checklist.
+
+**Delivered:** Render/Gunicorn backend, Vercel frontend, Supabase configuration, production secrets, health endpoint, and a cold-start mitigation ping. The literal review identified missing editable request fields, contractor filter coverage, assignment timeline events, dashboard measures, and later the free-text note requirement. Those were addressed rather than being hidden in the submission narrative.
+
+## Scope choices and cuts
+
+The ten required goals were the line of completion. Photo attachments were added only after that as the selected stretch feature. I deliberately did not build a tenant portal, payment-provider integration, lease workflow, owner/portfolio separation, utility billing, late fees, or preventive-maintenance scheduling.
+
+The main cut was automated testing. I manually exercised endpoints and browser flows during the take-home because it was the best fit for the time available, but this is not the long-term choice I would defend. The first follow-up would be integration tests around role boundaries, request transitions, rent classifications, alert reappearance, and the request-scoped attachment controls.

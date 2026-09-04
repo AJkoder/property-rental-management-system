@@ -1,61 +1,65 @@
-# Key Technical Decisions
+# Technical decisions
 
-## Decision: Flask + PostgreSQL over MERN
-Chose Flask + PostgreSQL + React over full MERN stack because the data model is heavily relational (units, maintenance requests, contractor assignments, payments, timeline — all foreign-key linked with a many-to-many assignment relationship). PostgreSQL handles this more naturally than MongoDB, which would require manually managing relationships. Also leveraged existing Flask experience for faster, more reliable delivery within the time budget.
+## 1. Flask + PostgreSQL + React instead of a full MERN stack
 
-## Decision: Transaction Pooler over Direct Connection (Supabase)
-Chose Supabase's Transaction Pooler connection string over Direct Connection because it's designed for stateless/serverless-style hosting (like Render's free tier), which handles brief connections better than a persistent direct connection would on a constrained free tier.
+**Chose:** Flask, SQLAlchemy, PostgreSQL, and React.
 
-## Decision: Numeric type for rent_amount, not Float
-Used SQLAlchemy's Numeric(10,2) instead of Float for rent_amount. Floats use binary representation and can introduce rounding errors with decimal currency values (e.g. 19.999999999 instead of 20.00). Numeric stores exact decimal values, which matters for anything involving money.
+**Rejected:** MongoDB as the primary persistence model.
 
-## Decision: Soft-delete (archive) over hard-delete for Units
-Units are never actually deleted from the database — archiving just sets is_archived=true. This preserves historical maintenance requests and rent payment records tied to that unit, which would otherwise be orphaned or lost. Matches Goal #2's requirement for archive/restore rather than deletion.
+**Why:** the core of this product is relational: one unit has payments and requests, users act on those records, and contractors join to requests many-to-many. PostgreSQL can enforce foreign keys and uniqueness where the data lives. I was also already comfortable with Flask, which reduced delivery risk within the time budget.
 
-## Decision: Status lifecycle as explicit state machine (lookup table), not scattered if/else
-Implemented ALLOWED_TRANSITIONS as a dictionary lookup (current status -> list of valid next statuses) in a dedicated status_rules.py file, rather than inline if/else chains in the route. This makes the business rules easy to read, test, and modify independently of the API layer. The "Resolved reopens to Triaged, not Reported" rule and the "Scheduled requires a contractor" rule are enforced as two separate, explicit checks.
+## 2. Soft archive instead of deleting units
 
-## Decision: Contractors see only their assigned requests (query-level filtering)
-Rather than filtering results after fetching everything, the contractor role filter is applied directly in the SQL query (join on Assignment, filter by contractor_id) before the request even leaves the database. Keeps this efficient and ensures contractors can never see other contractors' or unassigned requests, even via direct API calls.
+**Chose:** an `is_archived` flag and restore action.
 
-## Decision: Immutability enforced by omission, not database triggers
-Chose to make status_history immutable simply by never writing UPDATE or DELETE routes for it, rather than using database-level triggers or permissions to block writes. Simpler to reason about and sufficient for this application's needs, though a stricter production system might add a DB-level trigger as defense-in-depth.
+**Rejected:** hard deletion.
 
-## Decision: History write happens in the same transaction as the status change
-Both the MaintenanceRequest.status update and the StatusHistory insert happen before a single db.session.commit() call. This guarantees they can never get out of sync — either both succeed or (on any error) neither does.
+**Why:** a unit can have maintenance and payment history that remains meaningful after it leaves the active portfolio. Deleting the parent would either destroy that evidence or make every dependent relationship more awkward. Soft archiving meets the brief and keeps the default operational list clean.
 
-## Decision: Whitelisted sort fields, not raw column names from query params
-sort_by only accepts a fixed list of column names (created_at, updated_at, priority, status) rather than passing the user's input directly into getattr() unchecked. Prevents sorting by unintended/sensitive columns and avoids any risk of arbitrary attribute access from user input.
+## 3. Numeric money and payment snapshots
 
-## Decision: Filtering, sorting, and pagination all happen at the SQL query level
-All list-endpoint filtering (status, priority, unit_id, search) and pagination (offset/limit) are applied as SQLAlchemy query modifiers before the query executes, not by fetching all rows and slicing in Python. This keeps memory usage and response size bounded regardless of how much data exists, and is what "server-side" pagination/filtering actually means as opposed to just hiding rows in the frontend.
+**Chose:** `Numeric(10,2)` for rent and payment amounts, plus `expected_amount` stored on a payment.
 
-## Decision: Snapshot expected_amount on the payment record, not a live reference
-expected_amount is copied from the unit's current rent_amount at the moment a payment is recorded, rather than being calculated on-the-fly by joining to the unit each time. If rent changes later, old payment records still accurately reflect what was expected when they were recorded, instead of silently changing to match the new rent.
+**Rejected:** floating-point database amounts and calculating old results from the current unit rent.
 
-## Decision: Partial failure handling in bulk operations
-A bad row in a bulk payment submission (missing fields, non-existent unit, invalid amount) is classified as "unmatched" with a reason, rather than failing the entire batch. This matters practically — a manager pasting 50 rows shouldn't lose all 50 because of one typo. Used db.session.flush() before building response data (not just relying on the ORM defaults) to make sure generated IDs and relationships are available immediately, since the eventual commit happens once at the end of the loop.
+**Why:** binary floats are a poor representation for currency. More importantly, a unit's rent can change. The expected amount on an old payment should record what was due when it was logged, rather than silently changing when the current rent is edited.
 
-## Decision: Dashboard aggregation done in SQL (GROUP BY / COUNT), not Python loops
-Counts and group-by breakdowns (requests by status, requests by priority) use SQLAlchemy's func.count() with group_by(), letting the database do the aggregation. This stays efficient regardless of how much data exists, versus fetching all rows and counting in Python.
+## 4. Explicit status state machine
 
-## Decision: Dashboard is manager-only
-Occupancy, financial, and portfolio-wide maintenance data isn't something a contractor needs or should see - they only need their own assigned requests. Enforced with the same role_required('manager') pattern used elsewhere.
+**Chose:** a small transition mapping in `status_rules.py`, with the scheduling-assignment rule separate.
 
-## Decision: One alert row per (unit, month) via unique constraint
-Rather than tracking dismissal as a mutable flag that persists indefinitely, each alert is scoped to a specific month. Dismissing an alert only affects that month's row. The next time /generate runs in a new month, it checks that month's payment status independently and creates a fresh alert if still unpaid - it never looks at whether a previous month's alert was dismissed. This makes the "dismiss now, reappear next month if still unpaid" requirement fall out naturally from the data model rather than needing special-case logic.
+**Rejected:** scattered route-level `if/else` conditions.
 
-## Decision: Alert generation as a manual manager-triggered endpoint, not a background cron job
-In a real production system, alert generation would run automatically on a schedule (e.g. daily cron job). Since this take-home has no background job infrastructure (and adding one, like Celery, would be disproportionate for the assignment's scope), it's exposed as a manager-triggered POST endpoint instead. Documented here as a known simplification, not an oversight.
+**Why:** the allowed path is a business policy someone should be able to read at a glance. "Has an assignee" is not an edge in the lifecycle; it is a prerequisite for one destination, so keeping it as a separate check makes both ideas clear. The API, rather than the UI, enforces it.
 
-## Decision: Tailwind CSS v4 with the Vite plugin, not the older PostCSS config approach
-Tailwind v4 removed the old CLI init/config-file workflow in favor of a Vite plugin (@tailwindcss/vite) and a single @import "tailwindcss" line in CSS. Adopted the current recommended approach rather than pinning to v3 for familiarity.
+## 5. Server-side authorization and discovery
 
-## Decision: Frontend route protection is a UX convenience, not the real security boundary
-ProtectedRoute in React redirects unauthenticated users away from pages they shouldn't see, but this is purely for user experience. The actual permission enforcement happens server-side via role_required() on the Flask API - a user could bypass frontend routing entirely and the backend would still correctly reject unauthorized requests.
+**Chose:** JWT role claims plus server-side manager guards and contractor request scoping; SQL-level filters/pagination.
 
-## Decision: Render free tier + external cron ping to prevent cold starts
-Render's free tier spins down the backend after ~15 minutes of inactivity, causing a 30-60 second delay on the next request. Set up an external free cron service (cron-job.org) to ping /api/health every 10 minutes, keeping the instance warm. A pragmatic workaround for free-tier hosting rather than paying for an always-on instance, appropriate for this assignment's scope.
+**Rejected:** hiding buttons in React or loading every request and filtering client-side.
 
-## Decision: gunicorn for production instead of Flask's built-in dev server
-Flask's built-in server (python run.py) explicitly warns it isn't suitable for production. Added gunicorn as the WSGI server for the Render deployment, configured via a Procfile (web: gunicorn run:app).
+**Why:** neither UI visibility nor browser filtering protects data from a direct request. The query itself limits contractors to assigned work, while the frontend's role-aware navigation is simply a better user experience. Server-side request discovery also keeps response size bounded as data grows.
+
+## 6. Append-only history by API design
+
+**Chose:** write a history event in the same transaction as status, assignment, note, and attachment actions; expose no history mutation route.
+
+**Rejected:** treating a request's current status as sufficient history, or adding database triggers immediately.
+
+**Why:** records need to explain who did what and when. The single transaction keeps the primary action and its history coherent. Database triggers would add stronger defence in depth, but were disproportionate for the take-home once the API surface was already closed to mutation.
+
+## 7. A decision I reversed: status history alone was incomplete
+
+**Initial view:** logging creation and status changes covered the important audit trail.
+
+**What changed:** a literal re-read of the brief made it clear that assignment changes and notes were required as well. Assignment events were added first; the final audit also added free-text notes and records attachment activity.
+
+**Why this matters:** this was not cosmetic. An assignee change or a contractor's note explains the operational story just as much as a status change. I would rather correct an interpretation before submission than defend an incomplete one because the first version was already built.
+
+## 8. Free-tier deployment with a manual alert trigger
+
+**Chose:** Supabase for PostgreSQL, Render for the API, Vercel for the client, a health-check ping for Render, and a manager-triggered alert-generation route.
+
+**Rejected:** adding a queue/scheduler such as Celery solely for this exercise.
+
+**Why:** the selected services meet the free hosting constraint and keep each deployable component simple. A real system should generate alerts automatically; making it an explicit manager action was a deliberate scope trade-off, documented rather than obscured.
