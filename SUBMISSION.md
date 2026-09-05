@@ -1,71 +1,226 @@
-# Submission
+# Property Rental & Maintenance Management System
 
-Project completed Successfully.
+[![Live Demo](https://img.shields.io/badge/Live-Demo-success)](https://property-rental-management-system-nine.vercel.app)
 
-## Links
+A full-stack workspace for small property-management teams to run rental units, rent collection, maintenance requests, contractor work, and rent alerts from a single application — with server-enforced role separation between **managers** and **contractors**.
 
-- **GitHub repository:** https://github.com/AJkoder/property-rental-management-system
-- **Live application:** https://property-rental-management-system-nine.vercel.app
+---
 
-## Notes for the reviewer
+## Table of Contents
 
-The backend is hosted on Render's free tier, which sleeps after ~15 minutes of inactivity. To mitigate this, an external cron service pings the health endpoint every 10 minutes, so the deployed app should generally already be warm. If it is your very first visit and the app has been idle beyond that, the first request may still take up to a minute to wake up — a slow first load is a hosting characteristic, not a broken deployment.
+- [Live Demo](#live-demo)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [API Overview](#api-overview)
+- [Testing & Verification](#testing--verification)
+- [Documentation](#documentation)
 
-## Demo credentials
+---
+
+## Live Demo
+
+**App:** [property-rental-management-system-nine.vercel.app](https://property-rental-management-system-nine.vercel.app)  
+**API:** [property-rental-backend-ummm.onrender.com](https://property-rental-backend-ummm.onrender.com)
+
+**Demo credentials:**
 
 | Role | Email | Password |
-|------|-------|----------|
-| Property Manager | manager@test.com | test123 |
-| Maintenance Contractor | ramesh@test.com | test123 |
+| --- | --- | --- |
+| Property Manager | `manager@test.com` | `test123` |
+| Maintenance Contractor | `ramesh@test.com` | `test123` |
 
-## Stack
+---
 
-| Layer | What you used | Why |
-|-------|---------------|-----|
-| Frontend | React (Vite) + Tailwind CSS v4 + React Router + recharts + axios | Fast dev experience, utility-first styling for consistent spacing/colors without heavy custom CSS, and I already had hands-on experience with React from prior projects |
-| Backend | Flask + SQLAlchemy + Flask-JWT-Extended + Flask-Bcrypt + Alembic | The data model is heavily relational (units, requests, contractors, payments, many-to-many assignments), and I have direct prior experience building Flask APIs with real business logic, which let me move faster within the time budget |
-| Database | PostgreSQL, hosted on Supabase | Relational structure fits this domain naturally; Supabase gives a free, production-ready managed Postgres instance with no local setup needed |
-| Hosting | Render (backend), Vercel (frontend), Supabase (database) | All free-tier, matches the suggested combination in the brief, and each piece deploys independently and auto-redeploys on push |
+## Features
 
-## Goal checklist
+### For Managers
+- Create, edit, archive, and restore rental units and tenant records.
+- Review, triage, schedule, and resolve maintenance requests, and assign them to contractors.
+- Record one or more rent installments per unit per month — **payments are matched against the total paid for that month, not a single transaction**, so a partial payment followed by a top-up is correctly reconciled instead of flagged as underpaid.
+- Historic rent amounts are locked to the month they were paid, so a later rent increase never rewrites the status of past months.
+- Export a rent-roll CSV, view dashboard metrics, and manage rent alerts (generate, view, dismiss).
+- Live alert badge surfaces unresolved rent issues without a page refresh.
 
-Mark each honestly. Partial is fine — say what is partial.
+### For Contractors
+- View only maintenance requests they are personally assigned to.
+- Move an assigned request through its lifecycle (Triaged → Scheduled → Resolved) and reopen it if needed.
+- Add notes and upload photo attachments to their assigned requests.
+- See a personal dashboard scoped to their own workload — no visibility into units, payments, or other contractors' requests.
 
-| # | Goal | Status | Notes |
-|---|------|--------|-------|
-| 1 | Accounts and roles, server-enforced | Done | JWT carries the role as a claim; a `role_required()` decorator enforces permissions on every protected route server-side. Verified a contractor token is rejected (403) on manager-only routes even when called directly, not just hidden in the UI. |
-| 2 | Units (create/edit, rent + grace period, archive/restore) | Done | Units CRUD complete with archive/restore (soft delete, preserves history). Rent amount uses a decimal type, not float, to avoid rounding errors. |
-| 3 | Maintenance requests (description, priority, assignees, either role can edit description/priority) | Done | Requests belong to a unit, either role can create and edit description/priority, but only a manager can change the assigned-contractors list. |
-| 4 | Status lifecycle with rules | Done | Reported → Triaged → Scheduled → Resolved enforced via a lookup-table state machine. Scheduling without an assigned contractor is rejected server-side. Resolved reopens to Triaged, not Reported, matching the spec exactly. Any other transition is rejected with a message. |
-| 5 | Assignment (many-to-many, manager-only) | Done | Separate join table between requests and contractors. Only a manager can add/remove assignments. Contractors have a single endpoint returning every request assigned to them across all units. |
-| 6 | Finding requests (search, filters, sort, pagination, server-side) | Done | Search on description, filters for status, priority, unit, and contractor, sortable by created date/priority/status, paginated with a total count — all applied at the SQL query level, not fetched-then-filtered client-side. |
-| 7 | Bulk rent recording + CSV export | Done | Bulk endpoint classifies every row as matched/underpaid/overpaid/unmatched and returns a full per-row report; a bad row doesn't fail the batch. CSV export streams the current rent roll (unit, tenant, rent, payment status) as a downloadable file. |
-| 8 | Dashboard | Done | Headline stats (open requests, resolved this week, rent collected this month, unit occupancy), breakdown by status, by priority, and by contractor, plus a chart of requests resolved per week over the last 8 weeks. |
-| 9 | Immutable timeline | Done | A single append-only `status_history` table logs creation, every status change (old/new value and who), contractor assignment/removal, notes, and attachment activity. No update or delete route exists for this table anywhere in the codebase — immutability is enforced by the absence of any mutating endpoint, not a database trigger. |
-| 10 | Rent alerts (grace period, dismiss, reappear) | Done | Alerts are scoped one-per-unit-per-month via a unique constraint, which is what makes "dismiss now, reappear next month if still unmatched" work naturally — dismissing only affects that month's row, and the next month's alert is generated independently. Alert generation is a manager-triggered endpoint rather than an automatic cron job, documented as a known simplification in decisions.md. |
+### Access Control & Security
+- Every role and ownership check is enforced **server-side** with JWT claims — the frontend hides UI, but the backend independently rejects out-of-scope requests with 403s, even when called directly (not just through the UI).
+- Managers are scoped to the units they created; contractors are scoped to their own assignments — both enforced at the database query level, not just the list view.
+- Passwords are hashed with bcrypt; JWTs expire after 24 hours.
+- Every maintenance request keeps an **append-only** status/activity timeline — there is no update or delete route for history records, so the audit trail cannot be edited after the fact.
 
-## How much time did you actually spend?
+---
 
-Closer to 18 hours than the suggested 12, spread unevenly rather than in clean 2-hour blocks. Backend and data modelling took the biggest single share — somewhere around 7-8 hours — mostly because the status lifecycle and rent-matching logic had more edge cases than they looked like on paper (what happens to an old payment when rent changes mid-month, what a partial/installment payment should do to a month's classification, what a contractor is and isn't allowed to touch on a request they're not assigned to). The React frontend was another 4-5 hours across the six pages plus the request detail view, which ended up being the most complex single component since it holds status changes, assignment, notes, photos, and the timeline together.
+## Tech Stack
 
-The rest went to things that don't show up as "features" but took real time: deployment and its usual friction (Render/Vercel env vars, a Postgres connection string that needed URL-encoding, a couple of failed migrations from adding NOT NULL columns to tables that already had rows), a full re-read of the brief against what was actually built which caught real gaps (missing contractor filter, an unedittable description field, an incomplete timeline, a dashboard missing three of its required numbers), and a later security pass that found contractors could reach requests, units, and rent data they shouldn't have been able to via direct API calls rather than through the UI. That last round alone was probably 2 hours by itself, since fixing it properly meant checking every route again rather than patching the one place it was first noticed. Documentation — writing this file and the five under docs/ properly rather than as an afterthought — was another 2 hours or so, done in parallel with development rather than all at the end, which is the only reason the decisions and plan below are specific rather than reconstructed from memory.
+| Layer | Tools |
+| --- | --- |
+| Frontend | React, Vite, Tailwind CSS, React Router, Axios, Recharts |
+| Backend | Flask, SQLAlchemy, Flask-JWT-Extended, Flask-Bcrypt, Alembic |
+| Database | PostgreSQL |
+| Deployment | Vercel (frontend), Render (backend), Supabase (database hosting) |
 
-## What would you do next, with another 12 hours?
+---
 
-- Turn rent alert generation into an actual scheduled job instead of a manager-triggered button. I know why I made it manual (no background worker in scope for a free-tier take-home) and I'd still make the same call under the same time pressure, but of everything left undone, this is the one where the gap costs something real — a missed rent payment nobody noticed — rather than just inconvenience.
-- Expand the automated test suite. There's a real one now (`backend/tests/test_payments.py`) covering login and the installment-classification logic, which came directly out of finding a bug in that exact area — but it only covers one file. I'd add tests for the status state machine's illegal transitions, the contractor-assignment boundary checks, and the manager-scoping on units, since those are the three places a regression would be both easy to introduce and hard to notice by eye.
-- Give requests and payments their own `manager_id` rather than inheriting scope through the unit relationship. It works today, but every future query against those tables has to remember to join through units first, and that's exactly the kind of thing that's fine until someone forgets it once.
-- Pagination on the Units list and payment history table, which load everything at once right now. Fine at demo scale, not fine at a few hundred units.
-- Frontend polish that I kept deferring in favour of functionality: real skeleton loaders instead of a plain "Loading..." string, toast notifications instead of inline banners, and a proper pass at mobile widths below where the sidebar currently just disappears.
+## Project Structure
 
-## What are you least happy with in this codebase, and why?
+```
+property-rental-management-system/
+├── backend/
+│   ├── app/
+│   │   ├── models/         # SQLAlchemy models (User, Unit, MaintenanceRequest,
+│   │   │                   # Assignment, Payment, Alert, Attachment, StatusHistory)
+│   │   ├── routes/         # One blueprint per resource (auth, units, requests,
+│   │   │                   # assignments, payments, dashboard, alerts, attachments)
+│   │   ├── services/       # Demo data seeding / repair logic
+│   │   ├── utils/          # Auth helpers, status-transition rules
+│   │   ├── config.py
+│   │   └── __init__.py     # App factory, blueprint registration
+│   ├── migrations/         # Alembic migrations
+│   ├── tests/              # Automated regression suite
+│   └── run.py
+├── frontend/
+│   └── src/
+│       ├── api/            # One thin Axios wrapper per backend resource
+│       ├── components/     # Shared layout (nav, role-aware alert badge)
+│       ├── context/        # AuthContext (session, role, token)
+│       └── pages/          # Units, Requests, Payments, Dashboard, Alerts,
+│                           # Login, Signup
+├── docs/                   # Architecture, schema, decisions, plan, AI usage log
+├── SUBMISSION.md           # Submission checklist and notes
+└── NOTES.md
+```
 
-Most of the core logic I'd stand behind — the status lifecycle holds up under every edge case I tried, the timeline is genuinely append-only, and the rent-matching handles the messier real case of installment payments, not just a clean single-payment example. What I'm least happy with is more about a real manager actually living with this day to day, rather than any one bug.
+---
 
-**Rent alerts still need a human to click a button.** A property manager checking in once a week would eventually miss a month where nobody happened to open the Alerts page. The right version watches the calendar itself and doesn't depend on someone remembering to ask. I left it manual because a scheduled background job needs infrastructure this free-tier setup doesn't have, and I'd rather ship it honestly manual than fake a "daily" job that's actually triggered by whoever last logged in.
+## Getting Started
 
-**A contractor with a lot of active jobs has no way to prioritize at a glance.** Their one screen lists every assigned request, but there's no "these three are Urgent" surfacing beyond a small tag on each row — fine for the two or three requests in the demo data, less fine for someone juggling fifteen real ones across a week.
+### Prerequisites
+- **Backend:** Python 3.13 or later, and a PostgreSQL database
+- **Frontend:** Node.js 22 or later (for the Vite dev server and production build)
 
-**Two managers using the same instance can't share a contractor pool or hand off a unit.** Scoping units to the manager who created them was the right call for privacy, but it also means there's no way today to say "this contractor works for both of us" or transfer a building from one manager to another without going into the database directly. A real company with more than one manager would hit that within the first week.
+### 1. Backend setup
 
-None of these are things I'd call broken — they're the honest gap between "meets the ten goals" and "something I'd hand to an actual property manager and walk away from." Given more time, the alerts scheduler is the one I'd fix first, since it's the only one where the cost of the gap is a missed rent payment rather than an inconvenience.
+From the repository root:
+
+```bash
+cd backend
+python -m venv venv
+
+# Git Bash / macOS / Linux
+source venv/Scripts/activate
+# PowerShell alternative
+.\venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+```
+
+Create `backend/.env`:
+
+```env
+DATABASE_URL=postgresql://your-connection-string
+SECRET_KEY=generate-a-random-secret
+JWT_SECRET_KEY=generate-a-different-random-secret
+```
+
+Apply migrations and start the API:
+
+```bash
+flask --app run:app db upgrade
+python run.py
+```
+
+The API is now available at `http://127.0.0.1:5000/api`.
+
+### 2. Frontend setup
+
+In a second terminal:
+
+```bash
+cd frontend
+npm install
+```
+
+Create `frontend/.env`:
+
+```env
+VITE_API_URL=http://127.0.0.1:5000/api
+```
+
+Start the dev server:
+
+```bash
+npm run dev
+```
+
+Open the local URL Vite prints — normally `http://localhost:5173`.
+
+---
+
+## API Overview
+
+All routes are prefixed with `/api` and require a valid JWT (`Authorization: Bearer <token>`) unless noted otherwise. Role restrictions are enforced server-side, not just hidden in the UI.
+
+| Resource | Method & Path | Description |
+| --- | --- | --- |
+| **Auth** | `POST /auth/signup` | Register a manager or contractor |
+| | `POST /auth/login` | Log in, receive JWT |
+| | `GET /auth/me` | Current user's profile |
+| | `GET /auth/contractors` | List contractors (manager only) |
+| **Units** | `GET /units` · `POST /units` | List / create rental units (manager only) |
+| | `GET /units/<id>` · `PUT /units/<id>` | View / edit a unit |
+| | `PATCH /units/<id>/archive` · `/restore` | Archive or restore a unit |
+| | `GET /units/request-options` | Dropdown data for the request form |
+| **Requests** | `GET /requests` · `POST /requests` | Search/filter/sort/paginate · create a request |
+| | `GET /requests/<id>` · `PUT /requests/<id>` | View / edit a request |
+| | `PATCH /requests/<id>/status` | Move through the status lifecycle |
+| | `GET /requests/<id>/timeline` | Append-only activity history |
+| | `POST /requests/<id>/notes` | Add a note to the timeline |
+| **Assignments** | `POST /assignments` | Assign a contractor to a request (manager only) |
+| | `DELETE /assignments/<id>` | Remove an assignment |
+| | `GET /assignments/request/<id>` | List assignments for a request |
+| **Payments** | `POST /payments/bulk` | Record one or more rent installments |
+| | `GET /payments` | List recorded payments |
+| | `GET /payments/export` | Download the rent-roll CSV |
+| **Dashboard** | `GET /dashboard/summary` | Role-scoped metrics (managers see portfolio-wide; contractors see their own workload) |
+| **Alerts** | `POST /alerts/generate` | Generate this month's rent alerts (manager only) |
+| | `GET /alerts` · `PATCH /alerts/<id>/dismiss` | List / dismiss alerts |
+| **Attachments** | `POST /attachments/request/<id>` | Upload a photo (JPEG/PNG/WEBP/GIF, max 3 MB) |
+| | `GET /attachments/request/<id>` | List attachment metadata for a request |
+| | `GET /attachments/<id>` | Fetch full attachment data |
+| | `DELETE /attachments/<id>` | Remove an attachment (uploader or manager) |
+
+---
+
+## Testing & Verification
+
+Run the backend regression suite from `backend/`:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+This covers authentication, the installment-based rent-matching logic (splitting a payment across two transactions and confirming it's still classified correctly against the monthly total), and a legacy-data migration/repair scenario.
+
+Build the production frontend from `frontend/`:
+
+```bash
+npm run build
+```
+
+---
+
+## Documentation
+
+- [Architecture](./docs/architecture.md)
+- [Database schema](./docs/schema.md)
+- [Build plan](./docs/plan.md)
+- [Technical decisions](./docs/decisions.md)
+- [AI usage log](./docs/ai-prompts.md)
+- [Submission checklist and notes](./SUBMISSION.md)

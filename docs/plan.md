@@ -48,7 +48,7 @@ The brief suggested about 12 hours over a week. I used that as a scope constrain
 
 **Plan:** prove the hosted application works, then compare it directly with the brief rather than with my own condensed checklist.
 
-**Delivered:** Render/Gunicorn backend, Vercel frontend, Supabase configuration, production secrets, health endpoint, and a cold-start mitigation ping. The literal review identified missing editable request fields, contractor filter coverage, assignment timeline events, dashboard measures, and later the free-text note requirement. Those were addressed rather than being hidden in the submission narrative.
+**Delivered:** Render/Gunicorn backend, Vercel frontend, Supabase configuration, production secrets, health endpoint, and a cold-start mitigation ping. The literal review identified missing editable request fields, contractor filter coverage, and dashboard measures — all addressed rather than being hidden in the submission narrative. Two further gaps against the literal spec (assignment timeline events and the free-text note requirement) surfaced slightly later and were closed in session 7 alongside the security work.
 
 ## Session 7 — security audit and multi-manager scoping
 
