@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models import User
 from app.utils.auth_helpers import role_required
-from app.services.demo_data import create_manager_demo_data, ensure_documented_demo_data
+from app.services.demo_data import ensure_documented_demo_data
 from flask_jwt_extended import create_access_token
 
 auth_bp = Blueprint('auth', __name__)
@@ -45,9 +45,6 @@ def signup():
     user.set_password(password)
 
     db.session.add(user)
-    db.session.flush()
-    if user.role == 'manager':
-        create_manager_demo_data(user.id)
     db.session.commit()
 
     access_token = create_access_token(
