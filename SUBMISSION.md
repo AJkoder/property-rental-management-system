@@ -1,7 +1,5 @@
 # Submission
 
-Project completed Successfully.
-
 ## Links
 
 - **GitHub repository:** https://github.com/AJkoder/property-rental-management-system
@@ -9,63 +7,76 @@ Project completed Successfully.
 
 ## Notes for the reviewer
 
-The backend is hosted on Render's free tier, which sleeps after ~15 minutes of inactivity. To mitigate this, an external cron service pings the health endpoint every 10 minutes, so the deployed app should generally already be warm. If it is your very first visit and the app has been idle beyond that, the first request may still take up to a minute to wake up — a slow first load is a hosting characteristic, not a broken deployment.
+Everything here runs on free tiers. The backend (Render) sleeps after ~15 minutes of inactivity; an external cron pings its health endpoint every 10 minutes to keep it warm, so it's usually already awake — but if this is your very first visit after a longer idle stretch, the first request may still take up to a minute.
+
+One thing worth knowing going in: I added **photo attachments on maintenance requests** as a stretch feature beyond the 10 required goals, and free-text notes on requests once a re-read of the brief flagged them as part of the timeline requirement, not optional.
 
 ## Demo credentials
 
 | Role | Email | Password |
-|------|-------|----------|
+|---|---|---|
 | Property Manager | manager@test.com | test123 |
 | Maintenance Contractor | ramesh@test.com | test123 |
 
 ## Stack
 
-| Layer | What you used | Why |
-|-------|---------------|-----|
-| Frontend | React (Vite) + Tailwind CSS v4 + React Router + recharts + axios | Fast dev experience, utility-first styling for consistent spacing/colors without heavy custom CSS, and I already had hands-on experience with React from prior projects |
-| Backend | Flask + SQLAlchemy + Flask-JWT-Extended + Flask-Bcrypt + Alembic | The data model is heavily relational (units, requests, contractors, payments, many-to-many assignments), and I have direct prior experience building Flask APIs with real business logic, which let me move faster within the time budget |
-| Database | PostgreSQL, hosted on Supabase | Relational structure fits this domain naturally; Supabase gives a free, production-ready managed Postgres instance with no local setup needed |
-| Hosting | Render (backend), Vercel (frontend), Supabase (database) | All free-tier, matches the suggested combination in the brief, and each piece deploys independently and auto-redeploys on push |
+| Layer | What I used | Why |
+|---|---|---|
+| Frontend | React (Vite), Tailwind CSS, React Router, Recharts, Axios | Fast to build consistent UI with, and I already had hands-on React experience to move quickly within the time budget |
+| Backend | Flask, SQLAlchemy, Flask-JWT-Extended, Flask-Bcrypt, Alembic | The data model is heavily relational (units, requests, contractors, payments, many-to-many assignments); prior Flask experience let me focus time on the business logic rather than the framework |
+| Database | PostgreSQL (Supabase) | Relational structure fits this domain naturally; Supabase gives a production-ready managed Postgres with no local setup |
+| Hosting | Render (backend), Vercel (frontend), Supabase (database) | Free tier, matches the brief's suggested combination, each piece auto-redeploys independently on push |
 
 ## Goal checklist
 
-Mark each honestly. Partial is fine — say what is partial.
-
 | # | Goal | Status | Notes |
-|---|------|--------|-------|
-| 1 | Accounts and roles, server-enforced | Done | JWT carries the role as a claim; a `role_required()` decorator enforces permissions on every protected route server-side. Verified a contractor token is rejected (403) on manager-only routes even when called directly, not just hidden in the UI. |
-| 2 | Units (create/edit, rent + grace period, archive/restore) | Done | Units CRUD complete with archive/restore (soft delete, preserves history). Rent amount uses a decimal type, not float, to avoid rounding errors. |
-| 3 | Maintenance requests (description, priority, assignees, either role can edit description/priority) | Done | Requests belong to a unit, either role can create and edit description/priority, but only a manager can change the assigned-contractors list. |
-| 4 | Status lifecycle with rules | Done | Reported → Triaged → Scheduled → Resolved enforced via a lookup-table state machine. Scheduling without an assigned contractor is rejected server-side. Resolved reopens to Triaged, not Reported, matching the spec exactly. Any other transition is rejected with a message. |
-| 5 | Assignment (many-to-many, manager-only) | Done | Separate join table between requests and contractors. Only a manager can add/remove assignments. Contractors have a single endpoint returning every request assigned to them across all units. |
-| 6 | Finding requests (search, filters, sort, pagination, server-side) | Done | Search on description, filters for status, priority, unit, and contractor, sortable by created date/priority/status, paginated with a total count — all applied at the SQL query level, not fetched-then-filtered client-side. |
-| 7 | Bulk rent recording + CSV export | Done | Bulk endpoint classifies every row as matched/underpaid/overpaid/unmatched and returns a full per-row report; a bad row doesn't fail the batch. CSV export streams the current rent roll (unit, tenant, rent, payment status) as a downloadable file. |
-| 8 | Dashboard | Done | Headline stats (open requests, resolved this week, rent collected this month, unit occupancy), breakdown by status, by priority, and by contractor, plus a chart of requests resolved per week over the last 8 weeks. |
-| 9 | Immutable timeline | Done | A single append-only `status_history` table logs creation, every status change (old/new value and who), contractor assignment/removal, notes, and attachment activity. No update or delete route exists for this table anywhere in the codebase — immutability is enforced by the absence of any mutating endpoint, not a database trigger. |
-| 10 | Rent alerts (grace period, dismiss, reappear) | Done | Alerts are scoped one-per-unit-per-month via a unique constraint, which is what makes "dismiss now, reappear next month if still unmatched" work naturally — dismissing only affects that month's row, and the next month's alert is generated independently. Alert generation is a manager-triggered endpoint rather than an automatic cron job, documented as a known simplification in decisions.md. |
+|---|---|---|---|
+| 1 | Accounts and roles, server-enforced | Done | Role lives in the JWT; a `role_required()` decorator enforces it on every protected route. Verified a contractor token gets a 403 on manager-only routes even when called directly, not just hidden in the UI. |
+| 2 | Units (create/edit, rent, archive/restore) | Done | Full CRUD with soft-delete (archive/restore preserves history). Rent uses a decimal type, not float, to avoid rounding errors. |
+| 3 | Maintenance requests | Done | Either role can create and edit description/priority; only a manager can change the assigned-contractors list. |
+| 4 | Status lifecycle with rules | Done | Reported → Triaged → Scheduled → Resolved via a lookup-table state machine. Can't schedule without an assigned contractor. Resolved reopens to Triaged, not Reported. Any other move is rejected with a message. |
+| 5 | Assignment (many-to-many, manager-only) | Done | Separate join table between requests and contractors. Contractors have one endpoint returning every request assigned to them across all units. |
+| 6 | Search, filters, sort, pagination (server-side) | Done | Search on description; filters for status, priority, unit, contractor; sort by date/priority/status; paginated with a total count — all applied at the SQL query level. |
+| 7 | Bulk rent recording + CSV export | Done | Every row classified as matched/underpaid/overpaid/unmatched; a bad row doesn't fail the batch. CSV export streams the current rent roll. |
+| 8 | Dashboard | Done | Open requests, resolved this week, rent collected this month, occupancy, breakdowns by status/priority/contractor, and a weekly resolved-requests chart. |
+| 9 | Immutable timeline | Done | One append-only table logs creation, every status change, every assignment/removal, and notes. No update or delete route exists for it anywhere in the codebase. |
+| 10 | Rent alerts (grace period, dismiss, reappear) | Done | One alert per unit per month via a unique constraint — dismissing only affects that month, so next month's check is fully independent and reappears naturally if still unpaid. |
 
 ## How much time did you actually spend?
 
-Closer to 18 hours than the suggested 12, spread unevenly rather than in clean 2-hour blocks. Backend and data modelling took the biggest single share — somewhere around 7-8 hours — mostly because the status lifecycle and rent-matching logic had more edge cases than they looked like on paper (what happens to an old payment when rent changes mid-month, what a partial/installment payment should do to a month's classification, what a contractor is and isn't allowed to touch on a request they're not assigned to). The React frontend was another 4-5 hours across the six pages plus the request detail view, which ended up being the most complex single component since it holds status changes, assignment, notes, photos, and the timeline together.
+Closer to 18 hours than the suggested 12. Roughly:
 
-The rest went to things that don't show up as "features" but took real time: deployment and its usual friction (Render/Vercel env vars, a Postgres connection string that needed URL-encoding, a couple of failed migrations from adding NOT NULL columns to tables that already had rows), a full re-read of the brief against what was actually built which caught real gaps (missing contractor filter, an unedittable description field, an incomplete timeline, a dashboard missing three of its required numbers), and a later security pass that found contractors could reach requests, units, and rent data they shouldn't have been able to via direct API calls rather than through the UI. That last round alone was probably 2 hours by itself, since fixing it properly meant checking every route again rather than patching the one place it was first noticed. Documentation — writing this file and the five under docs/ properly rather than as an afterthought — was another 2 hours or so, done in parallel with development rather than all at the end, which is the only reason the decisions and plan below are specific rather than reconstructed from memory.
+- **7–8 hours** on the backend — the status lifecycle and rent-matching logic had more real edge cases than they looked like on paper (installment payments, what happens to old records when rent changes, what a contractor can and can't touch)
+- **4–5 hours** on the React frontend, most of it in the request detail view since it holds status changes, assignment, notes, photos, and the timeline together
+- **The rest** on things that don't look like "features" but ate real time: deployment friction, a full re-read of the brief that caught genuine gaps I'd missed, a later security pass that found contractors could reach data they shouldn't have via direct API calls, and documentation written alongside the work rather than reconstructed at the end
+
+I went slower than planned mostly because I kept testing "does this actually hold up" rather than moving on once something looked done — the security pass in particular meant going back through routes I'd already written and assumed were fine.
 
 ## What would you do next, with another 12 hours?
 
-- Turn rent alert generation into an actual scheduled job instead of a manager-triggered button. I know why I made it manual (no background worker in scope for a free-tier take-home) and I'd still make the same call under the same time pressure, but of everything left undone, this is the one where the gap costs something real — a missed rent payment nobody noticed — rather than just inconvenience.
-- Expand the automated test suite. There's a real one now (`backend/tests/test_payments.py`) covering login and the installment-classification logic, which came directly out of finding a bug in that exact area — but it only covers one file. I'd add tests for the status state machine's illegal transitions, the contractor-assignment boundary checks, and the manager-scoping on units, since those are the three places a regression would be both easy to introduce and hard to notice by eye.
-- Give requests and payments their own `manager_id` rather than inheriting scope through the unit relationship. It works today, but every future query against those tables has to remember to join through units first, and that's exactly the kind of thing that's fine until someone forgets it once.
-- Pagination on the Units list and payment history table, which load everything at once right now. Fine at demo scale, not fine at a few hundred units.
-- Frontend polish that I kept deferring in favour of functionality: real skeleton loaders instead of a plain "Loading..." string, toast notifications instead of inline banners, and a proper pass at mobile widths below where the sidebar currently just disappears.
+**To close remaining gaps:**
+- Turn rent alert generation into a real scheduled job instead of a manager-triggered button — the one gap where the cost is a missed rent payment, not just inconvenience
+- Expand the test suite beyond the one file it currently covers (login + rent-matching), specifically the status state machine and manager/contractor access boundaries
+- Give requests and payments their own `manager_id` instead of inheriting scope through the unit relationship, so future queries can't accidentally forget to join through units first
+
+**To make it something people would actually use, not just something that meets the brief:**
+- Real payment collection built in (not just recording that rent arrived, but actually taking it)
+- A shared calendar view for scheduled maintenance visits
+- Basic in-app support/chat for tenants and contractors on smaller deployments
+- More flexibility for how a management company is actually structured — shared contractor pools across managers, handing a unit off from one manager to another
+
+That second list is the honest gap between "meets all ten goals" and "a product I'd point a real property management company at." I'd want to close that gap end to end if I kept going.
 
 ## What are you least happy with in this codebase, and why?
 
-Most of the core logic I'd stand behind — the status lifecycle holds up under every edge case I tried, the timeline is genuinely append-only, and the rent-matching handles the messier real case of installment payments, not just a clean single-payment example. What I'm least happy with is more about a real manager actually living with this day to day, rather than any one bug.
+Most of the core logic I'd stand behind — the status lifecycle holds up under every edge case I tried, the timeline is genuinely append-only, and rent-matching handles real installment payments, not just a clean single-payment example. What I'm least happy with is less about a specific bug and more about a real manager living with this day to day:
 
-**Rent alerts still need a human to click a button.** A property manager checking in once a week would eventually miss a month where nobody happened to open the Alerts page. The right version watches the calendar itself and doesn't depend on someone remembering to ask. I left it manual because a scheduled background job needs infrastructure this free-tier setup doesn't have, and I'd rather ship it honestly manual than fake a "daily" job that's actually triggered by whoever last logged in.
+- **Rent alerts need a human to click a button.** A manager who doesn't check in for a week could miss it entirely.
+- **A contractor with many jobs has no way to prioritize at a glance** beyond a small tag on each row.
+- **Two managers on the same instance can't share a contractor or hand off a unit** — scoping units to their creator was the right privacy call, but a real multi-manager company would hit this limitation within the first week.
 
-**A contractor with a lot of active jobs has no way to prioritize at a glance.** Their one screen lists every assigned request, but there's no "these three are Urgent" surfacing beyond a small tag on each row — fine for the two or three requests in the demo data, less fine for someone juggling fifteen real ones across a week.
+None of these are broken, exactly — they're the honest distance between "meets the ten goals" and "something I'd hand to a real property manager and walk away from." Given more time, the alerts scheduler is what I'd fix first, since it's the only one where the gap costs actual money rather than just convenience.
 
-**Two managers using the same instance can't share a contractor pool or hand off a unit.** Scoping units to the manager who created them was the right call for privacy, but it also means there's no way today to say "this contractor works for both of us" or transfer a building from one manager to another without going into the database directly. A real company with more than one manager would hit that within the first week.
+---
 
-None of these are things I'd call broken — they're the honest gap between "meets the ten goals" and "something I'd hand to an actual property manager and walk away from." Given more time, the alerts scheduler is the one I'd fix first, since it's the only one where the cost of the gap is a missed rent payment rather than an inconvenience.
+One last note: whoever wrote the assignment brief and the `docs/` templates for this — thank you. They were unusually clear about exactly what was being evaluated and why, which made it much easier to actually build toward the right thing instead of guessing.
