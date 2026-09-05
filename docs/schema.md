@@ -24,12 +24,15 @@ All IDs are UUIDs stored as `String(36)`. Timestamps are set by the application 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `String(36)` | Primary key UUID |
+| `manager_id` | `String(36)` FK, indexed | Required reference to `users.id`. Every unit belongs to exactly one manager; this is what makes the app multi-tenant instead of a single shared portfolio |
 | `unit_number` | `String(50)` | Required label shown to managers |
 | `address` | `String(255)` | Required address |
 | `rent_amount` | `Numeric(10,2)` | Exact monthly rent, not a floating-point database column |
 | `tenant_name` | `String(120)` | Nullable because a unit may be vacant |
 | `is_archived` | `Boolean` | Soft-delete flag; defaults false |
 | `created_at`, `updated_at` | `DateTime` | UTC audit timestamps |
+
+I added `manager_id` after building out units and running into the obvious question: if two different managers sign up, should Manager A see Manager B's buildings? The brief doesn't say either way, but the answer is clearly no once you think about it as a real product, so every unit query filters by the logged-in manager's id, not just by role. Requests and payments inherit this scoping through their unit relationship rather than duplicating a manager_id on every table.
 
 ### `maintenance_requests`
 
@@ -112,7 +115,7 @@ The unique (`unit_id`, `month_covered`) constraint allows a dismissal to affect 
 
 PostgreSQL enforces primary/foreign keys, unique user email, unique request-contractor pairs, and one alert per unit/month. Those are facts that should remain true even if another API process or script reaches the database.
 
-Application code enforces role permissions, valid priority/status values, request transitions, the “assigned before scheduled” rule, maximum attachment size/type, and contractor visibility. These rules depend on the current caller or on business state across rows, so they fit the API layer. The scheduled-request guard also prevents removing the final contractor while a request is Scheduled.
+Application code enforces role permissions, valid priority/status values, request transitions, the "assigned before scheduled" rule, maximum attachment size/type, contractor visibility, and manager-to-manager isolation (a manager can only see, edit, or archive units where `manager_id` matches their own id — every unit route checks this, not just the list view). These rules depend on the current caller or on business state across rows, so they fit the API layer rather than the database. The scheduled-request guard also prevents removing the final contractor while a request is Scheduled.
 
 ## Intentional denormalisation and scale limits
 

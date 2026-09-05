@@ -63,3 +63,22 @@
 **Rejected:** adding a queue/scheduler such as Celery solely for this exercise.
 
 **Why:** the selected services meet the free hosting constraint and keep each deployable component simple. A real system should generate alerts automatically; making it an explicit manager action was a deliberate scope trade-off, documented rather than obscured.
+
+## 8. Free-tier deployment with a manual alert trigger
+
+**Chose:** Supabase for PostgreSQL, Render for the API, Vercel for the client, a health-check ping for Render, and a manager-triggered alert-generation route.
+
+**Rejected:** adding a queue/scheduler such as Celery solely for this exercise.
+
+**Why:** the selected services meet the free hosting constraint and keep each deployable component simple. A real system should generate alerts automatically; making it an explicit manager action was a deliberate scope trade-off, documented rather than obscured.
+
+
+## 9. Scoping units to the manager who owns them
+
+**Chose:** a `manager_id` foreign key on `units`, filtered into every units route (create, list, get, update, archive, restore), not just the default list view.
+
+**Rejected:** treating all managers as one shared portfolio, or scoping only the list endpoint and trusting the frontend not to request another manager's unit id directly.
+
+**Why:** the brief writes as if there's a single management company, but nothing stops two different people from signing up as manager on the same deployed instance. Once that's possible, "manager can create and archive units" quietly implies "their own units," and a shared-portfolio model would let one manager see or edit another's tenants and rent by design, not by bug. I added the column once this became obvious while testing with two manager accounts, and had to go back and add the same `manager_id` check to `get_unit`, `update_unit`, `archive_unit`, and `restore_unit` individually — filtering only the list endpoint would have left the single-record routes exploitable by guessing or copying a unit id from the network tab.
+
+**What I'd still tighten:** requests and payments aren't given their own `manager_id` column; they inherit scoping through their `unit_id` relationship instead. That's fine at this size but means every new query that touches requests or payments has to remember to join through units and filter there — a duplicated `manager_id` with proper indexing would make that harder to forget as the codebase grows.
