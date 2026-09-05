@@ -2,7 +2,7 @@
 
 ## Planning approach
 
-The brief suggested about 12 hours over a week. I used that as a scope constraint rather than a race: my aim was to complete the ten required behaviours reliably before adding a stretch feature. I did not keep an hour-by-hour timesheet or write individual estimates at the start of each session, so I do not want to invent precision after the fact. My best retrospective estimate is 14–15 hours: 7–8 on backend/data work, 4–5 on the React experience, and the rest on deployment, verification, documentation, and final fixes.
+The brief suggested about 12 hours over a week. I used that as a scope constraint rather than a race: my aim was to complete the ten required behaviours reliably before adding a stretch feature. I did not keep an hour-by-hour timesheet or write individual estimates at the start of each session, so I do not want to invent precision after the fact. My best retrospective estimate is closer to 17-18 hours across the week: 7-8 on backend/data work, 4-5 on the React experience, and the rest split across deployment, a literal re-read of the brief that caught real gaps, a later security pass, and documentation written alongside the work rather than reconstructed at the end.
 
 ## Session 1 — foundation
 
@@ -26,7 +26,7 @@ The brief suggested about 12 hours over a week. I used that as a scope constrain
 
 **Delivered:** maintenance requests, the many-to-many contractor assignment table, a status state machine, the scheduled-assignee guard, reopen-to-Triaged behaviour, and an append-only history table.
 
-**What took longer:** lifecycle behaviour has more edge cases than CRUD. I tested the complete path—Reported → Triaged → Scheduled → Resolved → Triaged—and invalid moves rather than trusting the happy path.
+**What took longer:** lifecycle behaviour has more edge cases than CRUD. I tested the complete path — Reported → Triaged → Scheduled → Resolved → Triaged — and invalid moves rather than trusting the happy path.
 
 ## Session 4 — portfolio operations
 
@@ -50,8 +50,20 @@ The brief suggested about 12 hours over a week. I used that as a scope constrain
 
 **Delivered:** Render/Gunicorn backend, Vercel frontend, Supabase configuration, production secrets, health endpoint, and a cold-start mitigation ping. The literal review identified missing editable request fields, contractor filter coverage, assignment timeline events, dashboard measures, and later the free-text note requirement. Those were addressed rather than being hidden in the submission narrative.
 
+## Session 7 — security audit and multi-manager scoping
+
+**Plan:** before calling this finished, go through every route again specifically looking for the gap between "hidden in the UI" and "enforced by the server," since that's the exact distinction goal 1 calls out by name.
+
+**Delivered:** found and fixed four real access-control gaps that earlier manual testing had missed. Contractors could reach a maintenance request's details, edits, status changes, and timeline directly by ID even when not assigned to it — only the list view had ever been correctly scoped, and every other route on the same resource had been left open. Units and payments had the same class of problem one level up: their list and detail endpoints checked that someone was logged in but never that they were a manager, so a contractor's own valid token could pull rent amounts and tenant names straight from the API. The assignment-lookup endpoint had no authentication check of any kind. Alongside these, I fixed a smaller correctness bug where the dashboard's "overdue" count ignored the grace period that Alerts correctly respects, rewrote the rent-roll CSV export so unpaid units actually appear in it instead of being silently absent, and removed a `Triaged → Reported` backward transition that was never part of the specified lifecycle.
+
+**What this surfaced along the way:** fixing the units bug properly meant asking a question the brief never directly poses — if two different people both sign up as a property manager on the same deployed app, should they see each other's buildings? The honest answer is no, so I added a `manager_id` column to units and scoped every single unit route to the logged-in manager's own id, not just the list endpoint. Requests and payments inherit that scoping through their unit relationship rather than getting their own manager_id column, which is a smaller, more localised choice I'd revisit if the app kept growing.
+
+**Also added this session:** free-text notes on a maintenance request (closing a literal requirement of goal 9 that the timeline had missed), and a guard preventing the last contractor from being removed from a request that's currently Scheduled, since that would leave the request in a state its own status claims is impossible.
+
+**Why this mattered more than it might look:** none of these were exotic bugs. Every one of them was "the same permission check I wrote correctly on one route, but didn't repeat on the neighbouring route for the same resource." That's a process lesson as much as a code one — the fix going forward isn't just patching these instances, it's writing the check once as a shared helper so a new route can't be added without it.
+
 ## Scope choices and cuts
 
-The ten required goals were the line of completion. Photo attachments were added only after that as the selected stretch feature. I deliberately did not build a tenant portal, payment-provider integration, lease workflow, owner/portfolio separation, utility billing, late fees, or preventive-maintenance scheduling.
+The ten required goals were the line of completion. Photo attachments were added after that as the selected stretch feature, later joined by free-text notes once the literal-brief review flagged them as part of goal 9 rather than optional. I deliberately did not build a tenant portal, payment-provider integration, lease workflow, owner/portfolio separation beyond manager-level unit scoping, utility billing, late fees, or preventive-maintenance scheduling.
 
-The main cut was automated testing. I manually exercised endpoints and browser flows during the take-home because it was the best fit for the time available, but this is not the long-term choice I would defend. The first follow-up would be integration tests around role boundaries, request transitions, rent classifications, alert reappearance, and the request-scoped attachment controls.
+The main ongoing cut is the size of the automated test suite. There's a real one now (`backend/tests/test_payments.py`), covering login and the installment rent-classification logic — it exists specifically because that's where a genuine bug was found during manual testing, not as a symbolic gesture. It does not yet cover the status state machine's illegal transitions, the contractor-assignment boundary checks, or the manager-scoping added in session 7, which is exactly where I'd extend it next.
