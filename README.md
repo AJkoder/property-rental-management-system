@@ -2,7 +2,8 @@
 
 A full-stack application for small property-management teams to manage rental units, rent collection, maintenance requests, contractor work, and rent alerts from one workspace.
 
-**Live app:** [property-rental-management-system-nine.vercel.app](https://property-rental-management-system-nine.vercel.app) · **API:** [property-rental-backend-ummm.onrender.com](https://property-rental-backend-ummm.onrender.com)
+**Live App:** [property-rental-management-system-nine.vercel.app](https://property-rental-management-system-nine.vercel.app)  
+**API:** [property-rental-backend-ummm.onrender.com](https://property-rental-backend-ummm.onrender.com)
 
 ## What it does
 
